@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { FormEvent, useRef, useState } from "react";
 import { createAuthClient } from "better-auth/react";
@@ -70,7 +71,14 @@ export default function LoginPage() {
         <aside className="auth-visual" aria-label="Brand overview">
           <div className="brand-row">
             <div className="brand-header">
-              <img src="/logo final.png" alt="KASAR DIMENSIONS" className="brand-image" />
+             <Image 
+  src="/logo final.png" 
+  alt="KASAR DIMENSIONS" 
+  className="brand-image" 
+  width={150} 
+  height={50} 
+  priority={true} 
+/>
             </div>
           </div>
 

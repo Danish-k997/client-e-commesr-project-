@@ -1,5 +1,5 @@
 "use client";
-
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useRef, useState } from "react";
@@ -52,7 +52,14 @@ export default function SignupPage() {
         <aside className="auth-visual" aria-label="Brand overview">
           <div className="brand-row">
             <div className="brand-header">
-              <img src="/logo final.png" alt="KASAR DIMENSIONS" className="brand-image" />
+              <Image 
+                src="/logo final.png" 
+                alt="KASAR DIMENSIONS" 
+                className="brand-image" 
+                width={150} 
+                height={50} 
+                priority={true} 
+              />
             </div>
           </div>
 
