@@ -27,8 +27,13 @@ export async function GET(request: NextRequest) {
   try {
     await connectDB();
 
-    const query: { status: "ACTIVE"; categoryId?: string } = { status: "ACTIVE" };
+    const adminView = request.nextUrl.searchParams.get("scope") === "admin";
+    const query: { status?: "ACTIVE"; categoryId?: string } = adminView ? {} : { status: "ACTIVE" };
     const categoryId = request.nextUrl.searchParams.get("categoryId");
+
+    if (adminView) {
+      await requireAdmin();
+    }
 
     if (categoryId) {
       query.categoryId = requireObjectId(categoryId, "categoryId");

@@ -92,7 +92,7 @@ export function handleApiError(error: unknown, logMessage: string) {
   }
 
   if (isMongoDuplicateKeyError(error)) {
-    return fail("A record with that slug already exists.", 409);
+    return fail(getDuplicateKeyMessage(error), 409);
   }
 
   console.error(logMessage, error);
@@ -108,4 +108,22 @@ function isMongoDuplicateKeyError(error: unknown) {
     isRecord(error) &&
     error.code === 11000
   );
+}
+
+function getDuplicateKeyMessage(error: unknown) {
+  if (!isRecord(error)) {
+    return "A record with that unique field already exists.";
+  }
+
+  const keyPattern = isRecord(error.keyPattern) ? error.keyPattern : {};
+
+  if ("sku" in keyPattern) {
+    return "A variant with that SKU already exists.";
+  }
+
+  if ("slug" in keyPattern) {
+    return "A record with that slug already exists.";
+  }
+
+  return "A record with that unique field already exists.";
 }

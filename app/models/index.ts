@@ -15,3 +15,6 @@ export type {
 
 export { default as ProductVariant } from "./ProductVariant";
 export type { IProductVariant } from "./ProductVariant";
+
+export { default as HeroSlide } from "./HeroSlide";
+export type { IHeroCta, IHeroImage, IHeroSlide, HeroSlideStatus } from "./HeroSlide";

@@ -1,6 +1,7 @@
 import { type NextRequest } from "next/server";
 
 import { connectDB } from "../../../lib/db";
+import { cloudinary } from "../../../lib/cloudinary";
 import { requireAdmin } from "../../../lib/authorization";
 import { Category, Product, Subcategory } from "../../../models";
 import {
@@ -13,7 +14,16 @@ import {
   serializeDocument,
 } from "../../_utils/responses";
 
-const CATEGORY_FIELDS = ["name", "slug", "description", "image", "status", "sortOrder"] as const;
+const CATEGORY_FIELDS = [
+  "name",
+  "slug",
+  "description",
+  "image",
+  "imagePublicId",
+  "imageDataUrl",
+  "status",
+  "sortOrder",
+] as const;
 
 type CategoryRouteContext = {
   params: Promise<{ categoryId: string }>;
@@ -49,7 +59,42 @@ export async function PATCH(request: NextRequest, { params }: CategoryRouteConte
 
     const body = await parseJsonBody(request);
     const payload = pickAllowedFields(body, CATEGORY_FIELDS, { requireAtLeastOne: true });
-    const category = await Category.findByIdAndUpdate(categoryId, payload, {
+    const imageDataUrl = payload.imageDataUrl;
+    delete payload.imageDataUrl;
+
+    if (imageDataUrl !== undefined && typeof imageDataUrl !== "string") {
+      throw new ApiError(400, "imageDataUrl must be an image data URL.");
+    }
+
+    if (typeof imageDataUrl === "string" && imageDataUrl.trim()) {
+      if (!imageDataUrl.startsWith("data:image/")) {
+        throw new ApiError(400, "imageDataUrl must be an image data URL.");
+      }
+
+      const result = await cloudinary.uploader.upload(imageDataUrl, {
+        folder: "kesar-dimensions/categories",
+        resource_type: "image",
+        use_filename: true,
+        unique_filename: true,
+        overwrite: false,
+        transformation: [{ quality: "auto" }, { fetch_format: "auto" }],
+      });
+      payload.image = result.secure_url;
+      payload.imagePublicId = result.public_id;
+    }
+
+    const clearImage = payload.image === "";
+    if (clearImage) {
+      delete payload.image;
+      delete payload.imagePublicId;
+    } else if (payload.imagePublicId === "") {
+      delete payload.imagePublicId;
+    }
+
+    const update = clearImage
+      ? { $set: payload, $unset: { image: 1, imagePublicId: 1 } }
+      : payload;
+    const category = await Category.findByIdAndUpdate(categoryId, update, {
       new: true,
       runValidators: true,
     }).lean();

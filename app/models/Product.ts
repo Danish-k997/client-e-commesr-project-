@@ -4,6 +4,7 @@ export type ProductStatus = "DRAFT" | "ACTIVE" | "OUT_OF_STOCK" | "ARCHIVED";
 
 export interface IProductImage {
   url: string;
+  publicId?: string;
   altText?: string;
   isPrimary?: boolean;
 }
@@ -26,10 +27,11 @@ export interface IProduct {
   shortDescription?: string;
   description: string;
   categoryId: Types.ObjectId;
-  subcategoryId?: Types.ObjectId;
+  subcategoryId?: Types.ObjectId | null;
   images: IProductImage[];
   basePrice: number;
   compareAtPrice?: number | null;
+  stock: number;
   variationDefinitions: IProductVariationDefinition[];
   specifications: IProductSpecification[];
   status: ProductStatus;
@@ -54,6 +56,11 @@ const ProductImageSchema = new mongoose.Schema<IProductImage>(
       },
     },
     altText: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    publicId: {
       type: String,
       trim: true,
       default: "",
@@ -209,6 +216,17 @@ const ProductSchema = new mongoose.Schema<IProduct>(
         message: "compareAtPrice must be a non-negative integer.",
       },
     },
+    stock: {
+      type: Number,
+      min: 0,
+      default: 0,
+      validate: {
+        validator(value: number) {
+          return Number.isInteger(value) && value >= 0;
+        },
+        message: "stock must be a non-negative integer.",
+      },
+    },
     variationDefinitions: {
       type: [ProductVariationDefinitionSchema],
       default: [],
@@ -271,7 +289,7 @@ ProductSchema.path("compareAtPrice").validate(function (value: number | null) {
     return true;
   }
 
-  return value >= (this as mongoose.Document & IProduct).basePrice;
+  return value >= (this as mongoose.Document & IProduct).get("basePrice");
 }, "compareAtPrice must be greater than or equal to basePrice.");
 
 ProductSchema.index({ categoryId: 1, status: 1 });

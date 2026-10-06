@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Outfit, Plus_Jakarta_Sans } from "next/font/google";
+import Providers from "./providers";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -14,7 +15,7 @@ const jakartaSans = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   title: "KASAR DIMENSIONS",
-  description: "Precision editorial authentication experience for KASAR DIMENSIONS custom fabrication clients.",
+  description: "Custom 3D printed products and made-to-order fabrication by KASAR DIMENSIONS.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -23,7 +24,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${outfit.variable} ${jakartaSans.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

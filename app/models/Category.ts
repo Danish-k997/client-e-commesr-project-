@@ -8,6 +8,7 @@ export interface ICategory {
   slug: string;
   description?: string;
   image?: string;
+  imagePublicId?: string;
   status: CategoryStatus;
   sortOrder: number;
   createdAt: Date;
@@ -43,6 +44,11 @@ const CategorySchema = new mongoose.Schema<ICategory>(
       default: "",
     },
     image: {
+      type: String,
+      trim: true,
+      default: undefined,
+    },
+    imagePublicId: {
       type: String,
       trim: true,
       default: undefined,
