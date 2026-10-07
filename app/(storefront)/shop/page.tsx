@@ -70,8 +70,8 @@ function ProductCard({ product }: { product: ProductRecord }) {
   const compareAtPrice = product.compareAtPrice;
 
   return (
-    <Link className="shop-product-card" href={`/products/${product._id}`}>
-      <div className="shop-product-image">
+    <Link className={styles["shop-product-card"]} href={`/products/${product._id}`}>
+      <div className={styles["shop-product-image"]}>
         {image ? (
           <Image
             src={image.url}
@@ -80,19 +80,21 @@ function ProductCard({ product }: { product: ProductRecord }) {
             sizes="(max-width: 640px) 50vw, (max-width: 980px) 33vw, 25vw"
           />
         ) : (
-          <span className="shop-product-no-image">Image unavailable</span>
+          <span className={styles["shop-product-no-image"]}>Image unavailable</span>
         )}
         {product.availability && (
           <span
-            className={`shop-product-availability${product.availability === "OUT_OF_STOCK" ? " is-unavailable" : ""}`}
+            className={`${styles["shop-product-availability"]}${
+              product.availability === "OUT_OF_STOCK" ? ` ${styles["is-unavailable"]}` : ""
+            }`}
           >
             {product.availability === "OUT_OF_STOCK" ? "Out of stock" : "In stock"}
           </span>
         )}
       </div>
-      <div className="shop-product-details">
+      <div className={styles["shop-product-details"]}>
         <h2>{product.title}</h2>
-        <div className="shop-product-prices">
+        <div className={styles["shop-product-prices"]}>
           <span>{formatPrice(product.basePrice)}</span>
           {compareAtPrice !== null &&
             compareAtPrice !== undefined &&
@@ -107,7 +109,7 @@ function ProductCard({ product }: { product: ProductRecord }) {
 
 function ProductCardSkeleton() {
   return (
-    <div className="shop-product-skeleton" aria-hidden="true">
+    <div className={styles["shop-product-skeleton"]} aria-hidden="true">
       <div />
       <span />
       <span />
@@ -117,7 +119,7 @@ function ProductCardSkeleton() {
 
 function ShopPageHeader() {
   return (
-    <header className="shop-page-header">
+    <header className={styles["shop-page-header"]}>
       <span className="eyebrow">The collection</span>
       <h1>Shop all products</h1>
       <p>Explore the KASAR DIMENSIONS collection.</p>
@@ -127,7 +129,7 @@ function ShopPageHeader() {
 
 function ProductGridSkeleton({ label }: { label: string }) {
   return (
-    <div className="shop-product-grid" aria-label={label} aria-busy="true">
+    <div className={styles["shop-product-grid"]} aria-label={label} aria-busy="true">
       {Array.from({ length: pageSize }, (_, index) => (
         <ProductCardSkeleton key={index} />
       ))}
@@ -145,7 +147,7 @@ export default function ShopPage() {
 
 function ShopPageLoading() {
   return (
-    <section className="shop-page">
+    <section className={styles["shop-page"]}>
       <ShopPageHeader />
       <ProductGridSkeleton label="Loading products" />
     </section>
@@ -292,11 +294,11 @@ function ShopContent() {
   }
 
   return (
-    <section className="shop-page">
+    <section className={styles["shop-page"]}>
       <ShopPageHeader />
 
-      <div className="shop-filters">
-        <div className="shop-filter-field shop-filter-search">
+      <div className={styles["shop-filters"]}>
+        <div className={`${styles["shop-filter-field"]} ${styles["shop-filter-search"]}`}>
           <label htmlFor="shop-search">Search</label>
           <input
             id="shop-search"
@@ -307,7 +309,7 @@ function ShopContent() {
           />
         </div>
 
-        <div className="shop-filter-field">
+        <div className={styles["shop-filter-field"]}>
           <label htmlFor="shop-category">Category</label>
           <select
             id="shop-category"
@@ -337,7 +339,7 @@ function ShopContent() {
         </div>
 
         {categoryId && (
-          <div className="shop-filter-field">
+          <div className={styles["shop-filter-field"]}>
             <label htmlFor="shop-subcategory">Subcategory</label>
             <select
               id="shop-subcategory"
@@ -363,7 +365,7 @@ function ShopContent() {
           </div>
         )}
 
-        <div className="shop-filter-field">
+        <div className={styles["shop-filter-field"]}>
           <label htmlFor="shop-sort">Sort by</label>
           <select
             id="shop-sort"
@@ -381,7 +383,7 @@ function ShopContent() {
         </div>
 
         {hasFilters && (
-          <button className="shop-clear-filters" type="button" onClick={clearFilters}>
+          <button className={styles["shop-clear-filters"]} type="button" onClick={clearFilters}>
             Clear filters
           </button>
         )}
@@ -390,17 +392,17 @@ function ShopContent() {
       {productsQuery.isPending ? (
         <ProductGridSkeleton label="Loading products" />
       ) : productsQuery.isError ? (
-        <div className="shop-state shop-state-error" role="alert">
+        <div className={`${styles["shop-state"]} ${styles["shop-state-error"]}`} role="alert">
           <h2>We couldn’t load the products</h2>
           <p>{errorMessage}</p>
-          <button type="button" className="shop-retry-button" onClick={() => void productsQuery.refetch()}>
+          <button type="button" className={styles["shop-retry-button"]} onClick={() => void productsQuery.refetch()}>
             Try again
           </button>
         </div>
       ) : isPageOutOfRange ? (
         <ProductGridSkeleton label="Loading products" />
       ) : products.length === 0 ? (
-        <div className="shop-state">
+        <div className={styles["shop-state"]}>
           <h2>{hasFilters ? "No products match your filters" : "No products available yet"}</h2>
           <p>
             {hasFilters
@@ -408,7 +410,7 @@ function ShopContent() {
               : "Please check back soon for the latest collection."}
           </p>
           {hasFilters && (
-            <button type="button" className="shop-retry-button" onClick={clearFilters}>
+            <button type="button" className={styles["shop-retry-button"]} onClick={clearFilters}>
               Clear filters
             </button>
           )}
@@ -416,7 +418,9 @@ function ShopContent() {
       ) : (
         <>
           <div
-            className={`shop-product-grid${productsQuery.isFetching ? " is-fetching" : ""}`}
+            className={`${styles["shop-product-grid"]}${
+              productsQuery.isFetching ? ` ${styles["is-fetching"]}` : ""
+            }`}
             aria-busy={productsQuery.isFetching}
           >
             {products.map((product) => (
@@ -424,7 +428,7 @@ function ShopContent() {
             ))}
           </div>
           {pagination && pagination.totalPages > 1 && (
-            <nav className="shop-pagination" aria-label="Product pages">
+            <nav className={styles["shop-pagination"]} aria-label="Product pages">
               <button
                 type="button"
                 onClick={() => goToPage(page - 1)}

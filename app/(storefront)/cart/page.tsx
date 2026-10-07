@@ -95,7 +95,7 @@ function getAvailabilityLabel(item: CartItem) {
 
 function CartPageHeader() {
   return (
-    <header className="cart-page-header">
+    <header className={styles["cart-page-header"]}>
       <span className="eyebrow">Your selection</span>
       <h1>Cart</h1>
       <p>Review your items before checking out.</p>
@@ -104,7 +104,7 @@ function CartPageHeader() {
 }
 
 function CartStateActions({ children }: { children: React.ReactNode }) {
-  return <div className="cart-state-actions">{children}</div>;
+  return <div className={styles["cart-state-actions"]}>{children}</div>;
 }
 
 function CartErrorState({ error, onRetry }: { error: unknown; onRetry: () => void }) {
@@ -112,18 +112,18 @@ function CartErrorState({ error, onRetry }: { error: unknown; onRetry: () => voi
   const message = getErrorMessage(error, "Your cart could not be loaded. Please try again.");
 
   return (
-    <section className="cart-page">
+    <section className={styles["cart-page"]}>
       <CartPageHeader />
-      <div className="shop-state shop-state-error" role="alert">
+      <div className={`${styles["shop-state"]} ${styles["shop-state-error"]}`} role="alert">
         {isAuthError ? (
           <>
             <h1>Please sign in to view your cart</h1>
             <p>Your cart is linked to your account. Sign in to continue shopping.</p>
             <CartStateActions>
-              <Link className="shop-retry-button cart-state-link" href="/login">
+              <Link className={`${styles["shop-retry-button"]} ${styles["cart-state-link"]}`} href="/login">
                 Sign in
               </Link>
-              <Link className="shop-retry-button cart-state-link" href="/shop">
+              <Link className={`${styles["shop-retry-button"]} ${styles["cart-state-link"]}`} href="/shop">
                 Continue shopping
               </Link>
             </CartStateActions>
@@ -132,7 +132,7 @@ function CartErrorState({ error, onRetry }: { error: unknown; onRetry: () => voi
           <>
             <h1>We couldn’t load your cart</h1>
             <p>{message}</p>
-            <button type="button" className="shop-retry-button" onClick={onRetry}>
+            <button type="button" className={styles["shop-retry-button"]} onClick={onRetry}>
               Try again
             </button>
           </>
@@ -144,13 +144,13 @@ function CartErrorState({ error, onRetry }: { error: unknown; onRetry: () => voi
 
 function CartEmptyState() {
   return (
-    <section className="cart-page">
+    <section className={styles["cart-page"]}>
       <CartPageHeader />
-      <div className="shop-state">
+      <div className={styles["shop-state"]}>
         <h1>Your cart is empty</h1>
         <p>When you add products they will appear here, ready for checkout.</p>
         <CartStateActions>
-          <Link className="shop-retry-button cart-state-link" href="/shop">
+          <Link className={`${styles["shop-retry-button"]} ${styles["cart-state-link"]}`} href="/shop">
             Continue shopping
           </Link>
         </CartStateActions>
@@ -161,11 +161,11 @@ function CartEmptyState() {
 
 function CartPageSkeleton() {
   return (
-    <section className="cart-page" aria-busy="true" aria-label="Loading cart">
+    <section className={styles["cart-page"]} aria-busy="true" aria-label="Loading cart">
       <CartPageHeader />
-      <div className="cart-skeleton" aria-hidden="true">
+      <div className={styles["cart-skeleton"]} aria-hidden="true">
         {Array.from({ length: 3 }, (_, index) => (
-          <div className="cart-skeleton-row" key={index} />
+          <div className={styles["cart-skeleton-row"]} key={index} />
         ))}
       </div>
     </section>
@@ -217,27 +217,27 @@ function CartItemRow({
   }
 
   return (
-    <li className="cart-item">
-      <div className="cart-item-image">
+    <li className={styles["cart-item"]}>
+      <div className={styles["cart-item-image"]}>
         {image ? (
           <Image src={image} alt={item.product?.title ?? "Product image"} fill sizes="96px" />
         ) : (
-          <span className="cart-item-no-image">No image</span>
+          <span className={styles["cart-item-no-image"]}>No image</span>
         )}
       </div>
 
-      <div className="cart-item-info">
-        <div className="cart-item-head">
-          <div className="cart-item-title">
+      <div className={styles["cart-item-info"]}>
+        <div className={styles["cart-item-head"]}>
+          <div className={styles["cart-item-title"]}>
             <Link href={`/products/${item.productId}`}>
               {item.product?.title ?? "Product unavailable"}
             </Link>
-            {item.variant && <span className="cart-item-sku">{item.variant.sku}</span>}
-            {isRemoving && <span className="cart-item-pending">Removing…</span>}
+            {item.variant && <span className={styles["cart-item-sku"]}>{item.variant.sku}</span>}
+            {isRemoving && <span className={styles["cart-item-pending"]}>Removing…</span>}
           </div>
           <button
             type="button"
-            className="cart-item-remove"
+            className={styles["cart-item-remove"]}
             disabled={isUpdating || isRemoving}
             onClick={() => removeMutation.mutate(item.itemId)}
           >
@@ -246,11 +246,11 @@ function CartItemRow({
         </div>
 
         {variantAttributes.length > 0 && (
-          <p className="cart-item-variant">{formatVariantAttributes(item.variant!.attributes)}</p>
+          <p className={styles["cart-item-variant"]}>{formatVariantAttributes(item.variant!.attributes)}</p>
         )}
 
         {customizationSummary.length > 0 && (
-          <ul className="cart-item-customization">
+          <ul className={styles["cart-item-customization"]}>
             {customizationSummary.map((entry) => (
               <li key={entry.label}>
                 <span>{entry.label}</span>
@@ -261,29 +261,29 @@ function CartItemRow({
         )}
 
         <span
-          className={`cart-item-availability${
-            item.availability === "AVAILABLE" ? "" : " is-unavailable"
+          className={`${styles["cart-item-availability"]}${
+            item.availability === "AVAILABLE" ? "" : ` ${styles["is-unavailable"]}`
           }`}
         >
           {getAvailabilityLabel(item)}
         </span>
 
         {rowError && (
-          <p className="cart-item-error" role="alert">
+          <p className={styles["cart-item-error"]} role="alert">
             {rowError}
           </p>
         )}
       </div>
 
-      <div className="cart-item-price">
-        <span className="cart-item-field-label">Price</span>
+      <div className={styles["cart-item-price"]}>
+        <span className={styles["cart-item-field-label"]}>Price</span>
         <strong>{item.price !== null ? formatPrice(item.price) : "Unavailable"}</strong>
       </div>
 
-      <div className="cart-item-quantity">
-        <span className="cart-item-field-label">Quantity</span>
+      <div className={styles["cart-item-quantity"]}>
+        <span className={styles["cart-item-field-label"]}>Quantity</span>
         <div
-          className="cart-item-quantity-control"
+          className={styles["cart-item-quantity-control"]}
           role="group"
           aria-label={`Quantity for ${item.product?.title ?? "item"}`}
         >
@@ -295,7 +295,7 @@ function CartItemRow({
           >
             &minus;
           </button>
-          <span className="cart-item-quantity-value" aria-live="polite">
+          <span className={styles["cart-item-quantity-value"]} aria-live="polite">
             {item.quantity}
           </span>
           <button
@@ -309,8 +309,8 @@ function CartItemRow({
         </div>
       </div>
 
-      <div className="cart-item-total">
-        <span className="cart-item-field-label">Total</span>
+      <div className={styles["cart-item-total"]}>
+        <span className={styles["cart-item-field-label"]}>Total</span>
         <strong>{item.price !== null ? formatPrice(item.price * item.quantity) : "—"}</strong>
       </div>
     </li>
@@ -342,10 +342,10 @@ function CartContent({ cart }: { cart: Cart }) {
   }
 
   return (
-    <section className="cart-page">
+    <section className={styles["cart-page"]}>
       <CartPageHeader />
 
-      <ul className="cart-items">
+      <ul className={styles["cart-items"]}>
         {cart.items.map((item) => (
           <CartItemRow
             key={item.itemId}
@@ -356,15 +356,15 @@ function CartContent({ cart }: { cart: Cart }) {
         ))}
       </ul>
 
-      <div className="cart-bottom">
-        <div className="cart-clear">
+      <div className={styles["cart-bottom"]}>
+        <div className={styles["cart-clear"]}>
           {confirmClear ? (
-            <div className="cart-clear-confirm" role="group" aria-label="Confirm empty cart">
+            <div className={styles["cart-clear-confirm"]} role="group" aria-label="Confirm empty cart">
               <p>Are you sure you want to empty your cart?</p>
-              <div className="cart-clear-actions">
+              <div className={styles["cart-clear-actions"]}>
                 <button
                   type="button"
-                  className="cart-clear-delete"
+                  className={styles["cart-clear-delete"]}
                   disabled={clearMutation.isPending}
                   onClick={handleClearCart}
                 >
@@ -372,7 +372,7 @@ function CartContent({ cart }: { cart: Cart }) {
                 </button>
                 <button
                   type="button"
-                  className="shop-retry-button"
+                  className={styles["shop-retry-button"]}
                   disabled={clearMutation.isPending}
                   onClick={() => setConfirmClear(false)}
                 >
@@ -380,31 +380,31 @@ function CartContent({ cart }: { cart: Cart }) {
                 </button>
               </div>
               {clearError && (
-                <p className="cart-item-error" role="alert">
+                <p className={styles["cart-item-error"]} role="alert">
                   {clearError}
                 </p>
               )}
             </div>
           ) : (
-            <button type="button" className="cart-clear-button" onClick={() => setConfirmClear(true)}>
+            <button type="button" className={styles["cart-clear-button"]} onClick={() => setConfirmClear(true)}>
               Empty cart
             </button>
           )}
         </div>
 
-        <div className="cart-summary">
-          <div className="cart-summary-row">
+        <div className={styles["cart-summary"]}>
+          <div className={styles["cart-summary-row"]}>
             <span>Items</span>
             <strong>
               {itemCount} {itemCount === 1 ? "item" : "items"}
             </strong>
           </div>
-          <div className="cart-summary-row">
+          <div className={styles["cart-summary-row"]}>
             <span>Subtotal</span>
             <strong>{formatPrice(subtotal)}</strong>
           </div>
           {hasBlockedItems && (
-            <p className="cart-summary-note">
+            <p className={styles["cart-summary-note"]}>
               Some items are out of stock or no longer available. They are shown so you can review or
               remove them before checkout.
             </p>
