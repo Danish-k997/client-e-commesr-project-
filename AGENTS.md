@@ -711,3 +711,14 @@ A feature is complete only when:
 - no unrelated changes were introduced
 
 Only then consider the feature complete.
+# CSS SAFETY RULES
+
+1. Never wholesale-rewrite app/globals.css.
+2. Never replace a stylesheet using destructive string/file writes.
+3. Preserve existing CSS unless explicitly instructed.
+4. Prefer feature-specific CSS Modules for feature UI.
+5. Before modifying shared CSS, inspect current contents.
+6. Make minimal targeted changes.
+7. After UI changes run typecheck, lint and build.
+8. Verify the affected page before marking the feature complete.
+9. Commit completed feature work before starting the next feature.
