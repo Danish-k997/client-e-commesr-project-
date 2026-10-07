@@ -1,5 +1,6 @@
 "use client";
 
+import styles from "./ProductCustomization.module.css";
 import Image from "next/image";
 import { useRef, useState, type ChangeEvent } from "react";
 

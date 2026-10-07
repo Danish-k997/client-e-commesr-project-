@@ -1,5 +1,6 @@
 "use client";
 
+import styles from "./ProductDetailView.module.css";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
