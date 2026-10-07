@@ -108,19 +108,19 @@ type BestSellerHeaderProps = {
 
 function BestSellerHeader({ showControls, prevButtonRef, nextButtonRef }: BestSellerHeaderProps) {
   return (
-    <div className="best-seller-header">
+    <div className={styles["best-seller-header"]}>
       <div>
         <p className="eyebrow">Curated by the studio</p>
-        <h2 className="best-seller-title">Best sellers</h2>
-        <p className="best-seller-subtitle">
+        <h2 className={styles["best-seller-title"]}>Best sellers</h2>
+        <p className={styles["best-seller-subtitle"]}>
           Handpicked pieces from the KASAR DIMENSIONS collection.
         </p>
       </div>
-      <div className="best-seller-controls" hidden={!showControls}>
+      <div className={styles["best-seller-controls"]} hidden={!showControls}>
         <button
           type="button"
           ref={prevButtonRef}
-          className="best-seller-arrow"
+          className={styles["best-seller-arrow"]}
           aria-label="Previous best sellers"
         >
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -130,7 +130,7 @@ function BestSellerHeader({ showControls, prevButtonRef, nextButtonRef }: BestSe
         <button
           type="button"
           ref={nextButtonRef}
-          className="best-seller-arrow"
+          className={styles["best-seller-arrow"]}
           aria-label="Next best sellers"
         >
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -203,8 +203,8 @@ function BestSellerCard({ product }: { product: ProductRecord }) {
   const addLabel = showAdded ? "Added" : isPendingThis ? "Adding…" : "Add to Cart";
 
   return (
-    <article className="best-seller-card">
-      <Link className="best-seller-card-media" href={productHref}>
+    <article className={styles["best-seller-card"]}>
+      <Link className={styles["best-seller-card-media"]} href={productHref}>
         {image ? (
           <Image
             src={image.url}
@@ -214,53 +214,58 @@ function BestSellerCard({ product }: { product: ProductRecord }) {
             draggable={false}
           />
         ) : (
-          <span className="best-seller-no-image">Image unavailable</span>
+          <span className={styles["best-seller-no-image"]}>Image unavailable</span>
         )}
-        <span className="best-seller-badge">Best Seller</span>
+        <span className={styles["best-seller-badge"]}>Best Seller</span>
         <span
-          className={`best-seller-availability${outOfStock ? " is-unavailable" : ""}`}
+          className={`${styles["best-seller-availability"]}${
+            outOfStock ? ` ${styles["is-unavailable"]}` : ""
+          }`}
         >
           {outOfStock ? "Out of stock" : "In stock"}
         </span>
       </Link>
 
-      <div className="best-seller-card-body">
-        <h3 className="best-seller-card-title">
+      <div className={styles["best-seller-card-body"]}>
+        <h3 className={styles["best-seller-card-title"]}>
           <Link href={productHref}>
             {product.title}
           </Link>
         </h3>
 
-        <div className="best-seller-card-prices">
+        <div className={styles["best-seller-card-prices"]}>
           <strong>{formatPrice(product.basePrice)}</strong>
           {product.compareAtPrice !== null &&
             product.compareAtPrice !== undefined &&
             product.compareAtPrice > product.basePrice && (
-              <span className="best-seller-compare-at">{formatPrice(product.compareAtPrice)}</span>
+              <span className={styles["best-seller-compare-at"]}>{formatPrice(product.compareAtPrice)}</span>
             )}
         </div>
 
-        <div className="best-seller-card-actions">
+        <div className={styles["best-seller-card-actions"]}>
           {supportsDirectAdd && !outOfStock ? (
             <button
               type="button"
-              className={`best-seller-add-btn${showAdded ? " is-added" : ""}`}
+              className={`${styles["best-seller-add-btn"]}${showAdded ? ` ${styles["is-added"]}` : ""}`}
               disabled={isPendingThis}
               onClick={handleAddToCart}
             >
               {addLabel}
             </button>
           ) : (
-            <Link className="best-seller-add-btn best-seller-choose-btn" href={productHref}>
+            <Link
+              className={`${styles["best-seller-add-btn"]} ${styles["best-seller-choose-btn"]}`}
+              href={productHref}
+            >
               {outOfStock ? "View product" : "Choose options"}
             </Link>
           )}
-          <Link className="best-seller-view-link" href={productHref}>
+          <Link className={styles["best-seller-view-link"]} href={productHref}>
             View details
           </Link>
         </div>
 
-        {addError && <p className="best-seller-add-error" role="alert">{addError}</p>}
+        {addError && <p className={styles["best-seller-add-error"]} role="alert">{addError}</p>}
       </div>
     </article>
   );
@@ -268,10 +273,10 @@ function BestSellerCard({ product }: { product: ProductRecord }) {
 
 function BestSellerCardSkeleton() {
   return (
-    <div className="best-seller-skeleton" aria-hidden="true">
-      <span className="best-seller-skeleton-media" />
-      <span className="best-seller-skeleton-line" />
-      <span className="best-seller-skeleton-line short" />
+    <div className={styles["best-seller-skeleton"]} aria-hidden="true">
+      <span className={styles["best-seller-skeleton-media"]} />
+      <span className={styles["best-seller-skeleton-line"]} />
+      <span className={`${styles["best-seller-skeleton-line"]} ${styles["short"]}`} />
     </div>
   );
 }
@@ -314,14 +319,14 @@ function BestSellerShelf({ products }: { products: ProductRecord[] }) {
   }
 
   return (
-    <div className="best-seller-shelf">
+    <div className={styles["best-seller-shelf"]}>
       <BestSellerHeader
         showControls={canScroll}
         prevButtonRef={prevButtonRef}
         nextButtonRef={nextButtonRef}
       />
       <div
-        className="best-seller-viewport"
+        className={styles["best-seller-viewport"]}
         onFocusCapture={pauseAutoplay}
         onBlurCapture={resumeAutoplay}
       >
@@ -348,10 +353,10 @@ function BestSellerShelf({ products }: { products: ProductRecord[] }) {
           onSwiper={(swiper) => {
             swiperRef.current = swiper;
           }}
-          className="best-seller-swiper"
+          className={styles["best-seller-swiper"]}
         >
           {products.map((product) => (
-            <SwiperSlide key={product._id} className="best-seller-slide">
+            <SwiperSlide key={product._id} className={styles["best-seller-slide"]}>
               <BestSellerCard product={product} />
             </SwiperSlide>
           ))}
@@ -380,11 +385,11 @@ export default function BestSellerSection() {
   }
 
   return (
-    <section className="best-seller-section" aria-label="Best Sellers">
+    <section className={styles["best-seller-section"]} aria-label="Best Sellers">
       {productsQuery.isPending ? (
         <>
           <BestSellerHeader showControls={false} />
-          <div className="best-seller-skeleton-row" aria-hidden="true">
+          <div className={styles["best-seller-skeleton-row"]} aria-hidden="true">
             {Array.from({ length: 5 }, (_, index) => (
               <BestSellerCardSkeleton key={index} />
             ))}

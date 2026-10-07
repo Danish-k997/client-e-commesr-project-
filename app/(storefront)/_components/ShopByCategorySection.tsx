@@ -9,26 +9,26 @@ import { useCategories, type CategoryRecord } from "../../lib/api/products";
 function CategoryCard({ category }: { category: CategoryRecord }) {
   return (
     <Link
-      className="shop-category-card"
+      className={styles["shop-category-card"]}
       href={`/shop?categoryId=${encodeURIComponent(category._id)}`}
       aria-label={`Shop ${category.name} category`}
     >
-      <span className="shop-category-card-media">
+      <span className={styles["shop-category-card-media"]}>
         {category.image ? (
           <Image
-            className="shop-category-card-image"
+            className={styles["shop-category-card-image"]}
             src={category.image}
             alt=""
             fill
             sizes="(max-width: 767px) 46vw, (max-width: 980px) 30vw, 18vw"
           />
         ) : (
-          <span className="shop-category-card-fallback" aria-hidden="true">
+          <span className={styles["shop-category-card-fallback"]} aria-hidden="true">
             {category.name.trim().charAt(0).toUpperCase()}
           </span>
         )}
-        <span className="shop-category-card-scrim" aria-hidden="true" />
-        <span className="shop-category-card-name">{category.name}</span>
+        <span className={styles["shop-category-card-scrim"]} aria-hidden="true" />
+        <span className={styles["shop-category-card-name"]}>{category.name}</span>
       </span>
     </Link>
   );
@@ -36,7 +36,7 @@ function CategoryCard({ category }: { category: CategoryRecord }) {
 
 function CategoryGrid({ categories }: { categories: CategoryRecord[] }) {
   return (
-    <div className="shop-category-grid">
+    <div className={styles["shop-category-grid"]}>
       {categories.map((category) => (
         <CategoryCard key={category._id} category={category} />
       ))}
@@ -46,9 +46,9 @@ function CategoryGrid({ categories }: { categories: CategoryRecord[] }) {
 
 function CategoryGridSkeleton() {
   return (
-    <div className="shop-category-grid" aria-hidden="true">
+    <div className={styles["shop-category-grid"]} aria-hidden="true">
       {Array.from({ length: 10 }, (_, index) => (
-        <div key={index} className="shop-category-skeleton-cell" />
+        <div key={index} className={styles["shop-category-skeleton-cell"]} />
       ))}
     </div>
   );
@@ -63,11 +63,11 @@ export default function ShopByCategorySection() {
   }
 
   return (
-    <section className="shop-category-section" aria-label="Shop by category">
-      <header className="shop-category-header">
+    <section className={styles["shop-category-section"]} aria-label="Shop by category">
+      <header className={styles["shop-category-header"]}>
         <p className="eyebrow">Browse the collection</p>
-        <h2 className="shop-category-title">Shop by category</h2>
-        <p className="shop-category-subtitle">
+        <h2 className={styles["shop-category-title"]}>Shop by category</h2>
+        <p className={styles["shop-category-subtitle"]}>
           A curated starting point to explore every part of our catalog.
         </p>
       </header>
