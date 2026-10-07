@@ -3,15 +3,9 @@ import { NextResponse } from "next/server";
 
 import { AuthorizationError } from "../../lib/authorization";
 
-export class ApiError extends Error {
-  constructor(
-    public readonly statusCode: number,
-    message: string
-  ) {
-    super(message);
-    this.name = "ApiError";
-  }
-}
+import { ApiError } from "./api-error";
+
+export { ApiError };
 
 export function ok(payload: Record<string, unknown> = {}, init?: ResponseInit) {
   return NextResponse.json({ status: "ok", ...payload }, init);

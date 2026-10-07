@@ -4,11 +4,12 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
+import { getCartItemCount, useCart } from "../../lib/api";
+import { WHATSAPP_URL } from "../../lib/contact";
+
 type GlobalHeaderProps = {
   isAdmin: boolean;
 };
-
-const whatsappUrl = "https://wa.me/918102888865";
 
 function SearchIcon() {
   return (
@@ -52,6 +53,12 @@ export default function GlobalHeader({ isAdmin }: GlobalHeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLElement>(null);
+  const cartQuery = useCart();
+  const cartCount = cartQuery.data ? getCartItemCount(cartQuery.data) : 0;
+  const cartLabel =
+    cartCount > 0
+      ? `Cart, ${cartCount} ${cartCount === 1 ? "item" : "items"}`
+      : "Cart";
 
   useEffect(() => {
     if (!isMenuOpen) {
@@ -92,9 +99,9 @@ export default function GlobalHeader({ isAdmin }: GlobalHeaderProps) {
         </Link>
 
         <nav className="site-nav site-nav-desktop" aria-label="Main navigation">
-          <FutureNavigationItem>Shop</FutureNavigationItem>
+          <Link href="/shop">Shop</Link>
           <FutureNavigationItem>Categories</FutureNavigationItem>
-          <a className="site-nav-custom" href={whatsappUrl} target="_blank" rel="noreferrer">
+          <a className="site-nav-custom" href={WHATSAPP_URL} target="_blank" rel="noreferrer">
             Custom Order <span aria-hidden="true" />
           </a>
           <FutureNavigationItem>Bestsellers</FutureNavigationItem>
@@ -104,15 +111,20 @@ export default function GlobalHeader({ isAdmin }: GlobalHeaderProps) {
           <button className="site-icon-button" type="button" aria-label="Search (coming soon)" disabled>
             <SearchIcon />
           </button>
-          <button className="site-icon-button" type="button" aria-label="Cart (coming soon)" disabled>
+          <Link className="site-icon-button site-cart-button" href="/cart" aria-label={cartLabel}>
             <BagIcon />
-          </button>
+            {cartCount > 0 && (
+              <span className="site-cart-badge" aria-hidden="true">
+                {cartCount > 99 ? "99+" : cartCount}
+              </span>
+            )}
+          </Link>
           <FutureNavigationItem>
             <span className="site-club-pill">₹99 CLUB</span>
           </FutureNavigationItem>
           <a
             className="site-primary-cta"
-            href={whatsappUrl}
+            href={WHATSAPP_URL}
             target="_blank"
             rel="noreferrer"
           >
@@ -147,9 +159,9 @@ export default function GlobalHeader({ isAdmin }: GlobalHeaderProps) {
         inert={!isMenuOpen}
       >
         <div className="site-mobile-nav-links">
-          <FutureNavigationItem>Shop</FutureNavigationItem>
+          <Link href="/shop" onClick={closeMenu}>Shop</Link>
           <FutureNavigationItem>Categories</FutureNavigationItem>
-          <a className="site-nav-custom" href={whatsappUrl} target="_blank" rel="noreferrer" onClick={closeMenu}>
+          <a className="site-nav-custom" href={WHATSAPP_URL} target="_blank" rel="noreferrer" onClick={closeMenu}>
             Custom Order <span aria-hidden="true" />
           </a>
           <FutureNavigationItem>Bestsellers</FutureNavigationItem>
@@ -163,14 +175,20 @@ export default function GlobalHeader({ isAdmin }: GlobalHeaderProps) {
           <button type="button" aria-label="Search (coming soon)" disabled>
             <SearchIcon /> Search
           </button>
-          <button type="button" aria-label="Cart (coming soon)" disabled>
-            <BagIcon /> Cart
-          </button>
+          <Link className="site-mobile-cart" href="/cart" onClick={closeMenu} aria-label={cartLabel}>
+            <BagIcon />
+            <span>Cart</span>
+            {cartCount > 0 && (
+              <span className="site-mobile-cart-count" aria-hidden="true">
+                {cartCount > 99 ? "99+" : cartCount}
+              </span>
+            )}
+          </Link>
           <FutureNavigationItem>₹99 CLUB</FutureNavigationItem>
         </div>
         <a
           className="site-primary-cta site-mobile-cta"
-          href={whatsappUrl}
+          href={WHATSAPP_URL}
           target="_blank"
           rel="noreferrer"
           onClick={closeMenu}

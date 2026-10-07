@@ -4,6 +4,7 @@ import { cloudinary } from "../../lib/cloudinary";
 import { Category, Product, ProductVariant, Subcategory } from "../../models";
 import type {
   IProduct,
+  IProductCustomization,
   IProductImage,
   IProductSpecification,
   IProductVariationDefinition,
@@ -11,6 +12,7 @@ import type {
 } from "../../models";
 import type { IProductVariant } from "../../models";
 import { ApiError, requireObjectId, serializeDocument } from "../_utils/responses";
+import { parseCustomization, normalizeStoredCustomization } from "./_customization";
 
 export const PRODUCT_FIELDS = [
   "title",
@@ -25,6 +27,7 @@ export const PRODUCT_FIELDS = [
   "stock",
   "variationDefinitions",
   "specifications",
+  "customization",
   "status",
   "isFeatured",
   "seoTitle",
@@ -33,7 +36,7 @@ export const PRODUCT_FIELDS = [
 ] as const;
 
 const PRODUCT_STATUSES: ProductStatus[] = ["DRAFT", "ACTIVE", "OUT_OF_STOCK", "ARCHIVED"];
-const PUBLIC_STATUSES: ProductStatus[] = ["ACTIVE", "OUT_OF_STOCK"];
+export const PUBLIC_STATUSES: ProductStatus[] = ["ACTIVE", "OUT_OF_STOCK"];
 const MAX_PAGE_SIZE = 50;
 const DEFAULT_PAGE_SIZE = 12;
 
@@ -50,6 +53,7 @@ type ProductPayload = {
   stock: number;
   variationDefinitions: IProductVariationDefinition[];
   specifications: IProductSpecification[];
+  customization: IProductCustomization;
   status: ProductStatus;
   isFeatured: boolean;
   seoTitle?: string;
@@ -139,6 +143,16 @@ export function parseListQuery(searchParams: URLSearchParams, options: { admin?:
     filter.subcategoryId = requireObjectId(subcategoryId, "subcategoryId");
   }
 
+  const isFeatured = searchParams.get("isFeatured");
+
+  if (isFeatured !== null && isFeatured !== "true" && isFeatured !== "false") {
+    throw new ApiError(400, "isFeatured must be true or false.");
+  }
+
+  if (isFeatured !== null) {
+    filter.isFeatured = isFeatured === "true";
+  }
+
   return {
     filter,
     page,
@@ -208,6 +222,11 @@ export async function buildProductPayload(
       ? existingProduct?.specifications ?? []
       : parseSpecifications(payload.specifications);
 
+  const customization =
+    payload.customization === undefined
+      ? existingProduct?.customization ?? { enabled: false, fields: [] }
+      : parseCustomization(payload.customization);
+
   const productPayload: Partial<ProductPayload> = {};
 
   assignString(productPayload, payload, "title", !existingProduct);
@@ -228,6 +247,7 @@ export async function buildProductPayload(
   productPayload.stock = stock;
   productPayload.variationDefinitions = variationDefinitions;
   productPayload.specifications = specifications;
+  productPayload.customization = customization;
   productPayload.status = readStatus(payload.status) ?? existingProduct?.status ?? "DRAFT";
   productPayload.isFeatured = productPayload.isFeatured ?? existingProduct?.isFeatured ?? false;
 
@@ -404,6 +424,7 @@ export function serializeCustomerProduct(product: ProductRead, variants: Variant
     compareAtPrice: product.compareAtPrice,
     variationDefinitions: product.variationDefinitions,
     specifications: product.specifications,
+    customization: normalizeStoredCustomization(product.customization),
     status: product.status,
     isFeatured: product.isFeatured,
     seoTitle: product.seoTitle,
@@ -427,6 +448,7 @@ export function serializeCustomerProduct(product: ProductRead, variants: Variant
 export function serializeAdminProduct(product: ProductRead, variants: VariantRead[]) {
   return serializeDocument({
     ...product,
+    customization: normalizeStoredCustomization(product.customization),
     availability: getAvailability(product, variants.filter((variant) => variant.isActive)),
     variants,
   });

@@ -4,10 +4,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { FormEvent, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { createAuthClient } from "better-auth/react";
 import { inferAdditionalFields } from "better-auth/client/plugins";
 import type { auth } from "../lib/auth";
 import { getApplicationRole } from "../lib/roles";
+import { cartQueryKeys } from "../lib/api/cart";
 
 const authClient = createAuthClient({
   plugins: [inferAdditionalFields<typeof auth>()],
@@ -15,6 +17,7 @@ const authClient = createAuthClient({
 
 export default function LoginPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const submitting = useRef(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -53,6 +56,8 @@ export default function LoginPage() {
         setError("We couldn't verify your account access right now. Please try again.");
         return;
       }
+
+      queryClient.invalidateQueries({ queryKey: cartQueryKeys.cart });
 
       router.replace(
         getApplicationRole(session.user.role) === "ADMIN" ? "/admin/dashboard" : "/"

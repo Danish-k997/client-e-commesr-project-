@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Autoplay, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -195,23 +196,47 @@ export default function HeroSection() {
                 </div>
 
                 <div className="storefront-hero-visual" aria-label={slide.image.altText ?? slide.badge}>
-                  <div className="hero-visual-card">
-                    <div className="hero-visual-image-wrap">
-                      <Image
-                        src={productImage}
-                        alt={slide.image.altText ?? slide.badge}
-                        fill
-                        sizes="(max-width: 768px) 100vw, 52vw"
-                        priority={slide.sortOrder === 0}
-                        className="hero-visual-image"
-                      />
+                  {slide.productId ? (
+                    <Link
+                      className="hero-visual-card"
+                      href={`/products/${slide.productId}`}
+                      aria-label={`View ${productTitle}`}
+                    >
+                      <div className="hero-visual-image-wrap">
+                        <Image
+                          src={productImage}
+                          alt=""
+                          fill
+                          sizes="(max-width: 768px) 100vw, 52vw"
+                          priority={slide.sortOrder === 0}
+                          className="hero-visual-image"
+                        />
+                      </div>
+                      <div className="hero-product-card">
+                        <span className="hero-product-label">Featured product</span>
+                        <strong>{productTitle}</strong>
+                        <span>{formatPrice(productPrice)}</span>
+                      </div>
+                    </Link>
+                  ) : (
+                    <div className="hero-visual-card">
+                      <div className="hero-visual-image-wrap">
+                        <Image
+                          src={productImage}
+                          alt={slide.image.altText ?? slide.badge}
+                          fill
+                          sizes="(max-width: 768px) 100vw, 52vw"
+                          priority={slide.sortOrder === 0}
+                          className="hero-visual-image"
+                        />
+                      </div>
+                      <div className="hero-product-card">
+                        <span className="hero-product-label">Featured product</span>
+                        <strong>{productTitle}</strong>
+                        <span>{formatPrice(productPrice)}</span>
+                      </div>
                     </div>
-                    <div className="hero-product-card">
-                      <span className="hero-product-label">Featured product</span>
-                      <strong>{productTitle}</strong>
-                      <span>{formatPrice(productPrice)}</span>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </SwiperSlide>
             );

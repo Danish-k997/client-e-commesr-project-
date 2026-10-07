@@ -251,7 +251,7 @@ export default function ProductManagementPanel() {
                   <th>Price</th>
                   <th>Stock</th>
                   <th>Status</th>
-                  <th>Featured</th>
+                  <th>Best Seller</th>
                   <th>Updated</th>
                   <th>Actions</th>
                 </tr>

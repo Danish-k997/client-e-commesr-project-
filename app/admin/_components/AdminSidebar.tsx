@@ -15,6 +15,11 @@ const adminNavigation = [
     description: "Overview",
   },
   {
+    label: "Custom Requests",
+    href: "/admin/custom-requests",
+    description: "Fully custom ideas",
+  },
+  {
     label: "Manage Hero",
     href: "/admin/hero",
     description: "Homepage slides",

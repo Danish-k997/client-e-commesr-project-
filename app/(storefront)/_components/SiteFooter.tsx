@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-const whatsappUrl = "https://wa.me/918102888865";
+import { CONTACT_PHONE_URL, WHATSAPP_URL } from "../../lib/contact";
 
 function FutureFooterItem({ children }: { children: string }) {
   return (
@@ -38,16 +38,16 @@ export default function SiteFooter() {
           <nav className="site-footer-column" aria-label="Custom product links">
             <h2>Custom</h2>
             <ul>
-              <li><a href={whatsappUrl} target="_blank" rel="noreferrer">Custom order</a></li>
-              <li><a href={whatsappUrl} target="_blank" rel="noreferrer">Personalised products</a></li>
+              <li><a href={WHATSAPP_URL} target="_blank" rel="noreferrer">Custom order</a></li>
+              <li><a href={WHATSAPP_URL} target="_blank" rel="noreferrer">Personalised products</a></li>
             </ul>
           </nav>
 
           <nav className="site-footer-column" aria-label="Help links">
             <h2>Help</h2>
             <ul>
-              <li><a href="tel:+918102888865">Contact</a></li>
-              <li><a href={whatsappUrl} target="_blank" rel="noreferrer">WhatsApp</a></li>
+              <li><a href={CONTACT_PHONE_URL}>Contact</a></li>
+              <li><a href={WHATSAPP_URL} target="_blank" rel="noreferrer">WhatsApp</a></li>
               <li><FutureFooterItem>Shipping</FutureFooterItem></li>
               <li><FutureFooterItem>Returns</FutureFooterItem></li>
             </ul>

@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { apiRequest } from "./client";
 import type { ApiSuccessResponse } from "./types";
@@ -32,6 +32,79 @@ export type ProductSpecification = {
   unit?: string | null;
 };
 
+export type CustomizationFieldType = "TEXT" | "TEXTAREA" | "SELECT" | "NUMBER" | "IMAGE" | "DIMENSIONS";
+
+export type CustomizationOption = {
+  id: string;
+  value: string;
+};
+
+export type CustomizationNumberValidation = {
+  min?: number | null;
+  max?: number | null;
+};
+
+export type CustomizationDimensionAxis = {
+  enabled: boolean;
+  required: boolean;
+};
+
+export type CustomizationDimensionsConfig = {
+  unit: string;
+  width: CustomizationDimensionAxis;
+  height: CustomizationDimensionAxis;
+  depth: CustomizationDimensionAxis;
+};
+
+export type CustomizationFieldBase = {
+  id: string;
+  key: string;
+  type: CustomizationFieldType;
+  label: string;
+  required: boolean;
+  placeholder?: string;
+  helpText?: string;
+  sortOrder: number;
+};
+
+export type CustomizationTextField = CustomizationFieldBase & {
+  type: "TEXT" | "TEXTAREA";
+};
+
+export type CustomizationSelectField = CustomizationFieldBase & {
+  type: "SELECT";
+  options: CustomizationOption[];
+};
+
+export type CustomizationNumberField = CustomizationFieldBase & {
+  type: "NUMBER";
+  validation?: CustomizationNumberValidation;
+};
+
+export type CustomizationImageField = CustomizationFieldBase & {
+  type: "IMAGE";
+  maxFiles?: number | null;
+  maxFileSize?: number | null;
+  acceptedFileTypes?: string[];
+};
+
+export type CustomizationDimensionsField = CustomizationFieldBase & {
+  type: "DIMENSIONS";
+  dimensions: CustomizationDimensionsConfig;
+};
+
+export type CustomizationField =
+  | CustomizationTextField
+  | CustomizationSelectField
+  | CustomizationNumberField
+  | CustomizationImageField
+  | CustomizationDimensionsField;
+
+export type CustomizationConfig = {
+  enabled: boolean;
+  fields: CustomizationField[];
+};
+
 export type ProductVariantPayload = {
   sku: string;
   attributes: Record<string, string | number | boolean>;
@@ -44,6 +117,41 @@ export type ProductVariantPayload = {
 export type ProductVariantRecord = ProductVariantPayload & {
   _id: string;
   productId: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type CustomerProductVariantRecord = {
+  _id: string;
+  sku: string;
+  attributes: Record<string, string | number | boolean>;
+  price?: number | null;
+  imageId?: string | null;
+  isActive: boolean;
+  availability: "IN_STOCK" | "OUT_OF_STOCK";
+};
+
+export type CustomerProductRecord = {
+  _id: string;
+  title: string;
+  slug: string;
+  shortDescription?: string;
+  description: string;
+  categoryId: string;
+  subcategoryId?: string | null;
+  images: ProductImageRecord[];
+  basePrice: number;
+  compareAtPrice?: number | null;
+  variationDefinitions: ProductVariationDefinition[];
+  specifications: ProductSpecification[];
+  customization?: CustomizationConfig;
+  status: ProductStatus;
+  isFeatured: boolean;
+  seoTitle?: string;
+  seoDescription?: string;
+  availability?: "IN_STOCK" | "OUT_OF_STOCK";
+  variants?: CustomerProductVariantRecord[];
+  hasVariants?: boolean;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -62,6 +170,7 @@ export type ProductRecord = {
   stock?: number;
   variationDefinitions: ProductVariationDefinition[];
   specifications: ProductSpecification[];
+  customization?: CustomizationConfig;
   status: ProductStatus;
   isFeatured: boolean;
   seoTitle?: string;
@@ -86,6 +195,7 @@ export type ProductPayload = {
   stock: number;
   variationDefinitions: ProductVariationDefinition[];
   specifications: ProductSpecification[];
+  customization: CustomizationConfig;
   status: ProductStatus;
   isFeatured: boolean;
   seoTitle?: string;
@@ -100,7 +210,15 @@ export type ProductListParams = {
   status?: "ALL" | ProductStatus;
   categoryId?: string;
   subcategoryId?: string;
+  isFeatured?: boolean;
   sort?: "newest" | "oldest" | "price_asc" | "price_desc" | "title_asc" | "title_desc";
+};
+
+export type CustomerProductListParams = Pick<
+  ProductListParams,
+  "page" | "limit" | "search" | "categoryId" | "subcategoryId" | "isFeatured"
+> & {
+  sort?: ProductListParams["sort"];
 };
 
 export type ProductPagination = {
@@ -157,6 +275,10 @@ type ProductArchiveResponse = ApiSuccessResponse<{
   product: ProductRecord;
 }>;
 
+type CustomerProductResponse = ApiSuccessResponse<{
+  product: CustomerProductRecord;
+}>;
+
 type CategoriesResponse = ApiSuccessResponse<{
   categories: CategoryRecord[];
 }>;
@@ -180,6 +302,9 @@ type DeleteResponse = ApiSuccessResponse<{
 export const productQueryKeys = {
   lists: ["admin", "products"] as const,
   list: (params: ProductListParams) => ["admin", "products", params] as const,
+  customerLists: ["products"] as const,
+  customerList: (params: CustomerProductListParams) => [...productQueryKeys.customerLists, params] as const,
+  customerDetail: (productId: string) => ["products", "detail", productId] as const,
   detail: (productId: string) => ["admin", "products", "detail", productId] as const,
   categories: ["admin", "categories"] as const,
   adminCategories: ["admin", "categories", "management"] as const,
@@ -197,6 +322,25 @@ export async function listProducts(params: ProductListParams, signal?: AbortSign
       search: params.search?.trim() || undefined,
       categoryId: params.categoryId || undefined,
       subcategoryId: params.subcategoryId || undefined,
+      isFeatured: typeof params.isFeatured === "boolean" ? String(params.isFeatured) : undefined,
+    },
+    signal,
+  });
+
+  return {
+    products: response.products,
+    pagination: response.pagination,
+  };
+}
+
+export async function listCustomerProducts(params: CustomerProductListParams, signal?: AbortSignal) {
+  const response = await apiRequest<ProductListResponse>("GET", "/api/products", {
+    params: {
+      ...params,
+      search: params.search?.trim() || undefined,
+      categoryId: params.categoryId || undefined,
+      subcategoryId: params.subcategoryId || undefined,
+      isFeatured: typeof params.isFeatured === "boolean" ? String(params.isFeatured) : undefined,
     },
     signal,
   });
@@ -210,6 +354,14 @@ export async function listProducts(params: ProductListParams, signal?: AbortSign
 export async function getProduct(productId: string, signal?: AbortSignal) {
   const response = await apiRequest<ProductMutationResponse>("GET", `/api/products/${productId}`, {
     params: { scope: "admin" },
+    signal,
+  });
+
+  return response.product;
+}
+
+export async function getCustomerProduct(productId: string, signal?: AbortSignal) {
+  const response = await apiRequest<CustomerProductResponse>("GET", `/api/products/${productId}`, {
     signal,
   });
 
@@ -328,12 +480,33 @@ export function useAdminProducts(params: ProductListParams) {
   });
 }
 
+export function useCustomerProducts(params: CustomerProductListParams) {
+  return useQuery({
+    queryKey: productQueryKeys.customerList(params),
+    queryFn: ({ signal }) => listCustomerProducts(params, signal),
+    placeholderData: keepPreviousData,
+    staleTime: 45_000,
+    gcTime: 5 * 60_000,
+  });
+}
+
 export function useAdminProduct(productId: string) {
   return useQuery({
     queryKey: productQueryKeys.detail(productId),
     queryFn: ({ signal }) => getProduct(productId, signal),
     enabled: Boolean(productId),
     staleTime: 60_000,
+  });
+}
+
+export function useCustomerProduct(productId: string, initialData?: CustomerProductRecord) {
+  return useQuery({
+    queryKey: productQueryKeys.customerDetail(productId),
+    queryFn: ({ signal }) => getCustomerProduct(productId, signal),
+    initialData,
+    enabled: Boolean(productId),
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
   });
 }
 
@@ -460,6 +633,7 @@ export function useCreateProduct() {
     onSuccess: (product) => {
       queryClient.setQueryData(productQueryKeys.detail(product._id), product);
       void queryClient.invalidateQueries({ queryKey: productQueryKeys.lists });
+      void queryClient.invalidateQueries({ queryKey: productQueryKeys.customerLists });
     },
   });
 }
@@ -472,6 +646,7 @@ export function useUpdateProduct(productId: string) {
     onSuccess: (product) => {
       queryClient.setQueryData(productQueryKeys.detail(product._id), product);
       void queryClient.invalidateQueries({ queryKey: productQueryKeys.lists });
+      void queryClient.invalidateQueries({ queryKey: productQueryKeys.customerLists });
     },
   });
 }
@@ -484,6 +659,7 @@ export function useArchiveProduct() {
     onSuccess: (response) => {
       queryClient.setQueryData(productQueryKeys.detail(response.product._id), response.product);
       void queryClient.invalidateQueries({ queryKey: productQueryKeys.lists });
+      void queryClient.invalidateQueries({ queryKey: productQueryKeys.customerLists });
     },
   });
 }

@@ -1,0 +1,99 @@
+﻿# READ-ONLY CSS FORENSIC AUDIT REPORT
+
+## 1. EXECUTIVE RESULT
+
+The previously working CSS for the newer storefront UI sections is NOT RECOVERABLE from any source examined in this read-only audit.
+
+- CSS pipeline is intact: app/layout.tsx imports app/globals.css. Tailwind v4 is configured (@import "tailwindcss"; with @tailwindcss/postcss). Stylesheet loads correctly (HTTP 200). Issue is missing CSS rule definitions, not loading/staleness/override.
+- Missing selectors confirmed: BestSeller, ShopByCategory, Shop, Cart, ProductDetail, ProductCustomization, and Header Cart class families have zero matching CSS rules anywhere (project CSS, backups, Git history, alternate copies, archives, generated CSS/maps).
+- No exact working CSS found: No branch, stash, reflog, dangling object, backup, alternate working copy, archive, or generated artifact contains the missing selectors.
+
+## 2. WHAT WAS SCANNED
+
+Scope (recursive, read-only): C:\Users\Seyfert\Downloads\KESAR DEM WEBSITE\my-app\ excluding only node_modules, .git internals, .next (scanned separately). Also scanned Downloads/Desktop/Documents.
+
+Included: app/, lib/, public/, root files; all *.css and *.module.css (none outside listed); all *.ts/*.tsx for className usage (31 files); backup/debug files (*.bak,*.orig,*.old,*.broken,*.new,1); .next/ (CSS chunks, JS chunks, source maps); candidate archives and alternate directories.
+
+Inventory (non-generated): CSS files: app/globals.css, base.css. CSS modules: none. TSX files with affected classes: 31. Backup/debug: app/globals.css.broken (9,760 B), base.new (54,227 B), cur.new (9,736 B), 1 (0 B). Generated CSS: .next/dev/static/chunks/[root-of-the-server]__17dd1j7._.css (72,020 B), .next/static/chunks/3d7jiqf7drf9u.css (58,489 B).
+
+## 3. WHAT CSS EXISTS
+
+Source CSS:
+1. app/globals.css — 63,955 B / 3,282 lines = Git HEAD 359fc0a prefix + 518 appended lines (Custom Request/admin). Contains .site-header, .site-nav, .site-footer, .storefront-hero, .proof-banner, .custom-request-section-home, .admin-custom-requests-*, .cr-*.
+2. base.css — 54,222 B (root). Contains base design system (hero/proof-banner/site-header/site-footer/category-admin/product-admin). No missing storefront families.
+3. Backups: globals.css.broken (9,760 B, truncated CR-only) has .custom-request/.cr- only. base.new (54,227 B), cur.new (9,736 B) have admin/CR/cr only.
+
+Generated: dev/prod CSS chunks present and loading; source maps exist. Tailwind v4 processed. Pipeline functional.
+
+## 4. WHAT CSS IS MISSING
+
+Zero CSS rules for: best-seller-* (29), shop-category-* (13), shop-product-* (18), cart-*/cart-item-* (38), product-detail-* (44), product-customization-* (19), site-cart-* (4), custom-request-wa-link/form-helper (2), variation-* (ProductForm) and related editor classes (~167 selectors total).
+
+## 5. WHAT WAS RECOVERED
+
+Nothing. .next CSS chunks/maps contain no rules for missing families. JS chunks contain className strings only. No backups/alternate copies/archives contain missing selectors. No recoverable declarations from build output.
+
+## 6. WHAT COULD NOT BE RECOVERED
+
+Git: branches main/remotes/origin/main only. 4 commits (60728b0, ebb6327, 2afeaff, 359fc0a). No stash, no reflog extras, no dangling objects. git show <rev>:app/globals.css for all 4 has no missing families. git grep across all 4 revisions for missing selectors returns 0 matches.
+
+Explicit: "Exact historical CSS was not found in reachable Git history." No alternate copies/archives found containing missing CSS.
+
+## 7. WHAT ACTUALLY HAPPENED — CONFIRMED VS LIKELY
+
+CONFIRMED FACTS:
+- app/globals.css truncated to CR-only (globals.css.broken) then restored to HEAD+append (current).
+- HEAD (359fc0a) predates uncommitted UI features (BestSeller/ShopByCategory/Shop/Cart/ProductDetail/ProductCustomization/GlobalHeader cart) added Oct 6–7.
+- Those TSX files use class families with no CSS anywhere and no matches in any Git revision.
+- CSS pipeline/load/Tailwind working; no staleness/overrides.
+
+LIKELY CAUSE: Missing CSS never written/committed; existed only in unsaved working tree or never created; lost/not preserved across truncation/restore.
+
+UNPROVEN/UNKNOWN: Whether styles existed before truncation (no artifact), whether broken file had them (no), exact original visual design.
+
+## 8. FEATURE-BY-FEATURE CSS STATUS (key)
+
+| Feature | Component/File | Classes (count) | CSS Found | Missing | Recovery |
+|---|---|---|---|---|---|
+| Best Seller | BestSellerSection | 29 | 0 | ALL | None |
+| Shop by Category | ShopByCategorySection | 13 | 0 | ALL | None |
+| Shop | shop/page.tsx | 18 | 0 | ALL | None |
+| Cart | cart/page.tsx | 38 | 0 | ALL | None |
+| Product Detail | ProductDetailView | 44 | 0 | ALL | None |
+| Product Customization | ProductCustomization | 19 | 0 | ALL | None |
+| Header Cart | GlobalHeader (site-cart-*) | 4 | 0 | ALL | None |
+| Hero | HeroSection | 6 | FOUND | None | app/globals.css (base) |
+| Proof Banner | ProofBanner | 4 | FOUND | None | app/globals.css (base) |
+| Custom Request (home) | CustomRequestSection | 6 | FOUND | None | app/globals.css (appended) |
+| Custom Request (form) | CustomRequestForm | 9 (2 missing) | PARTIAL | custom-request-wa-link, form-helper | None |
+| Site Footer | SiteFooter | — | FOUND | None | app/globals.css (base) |
+| Admin CR | CustomRequestsPanel/Detail | — | FOUND | None | app/globals.css (appended) |
+| Product Admin (variations) | ProductForm | variation-* | 0 | Partial | None |
+| Customization Editor | CustomizationFieldEditor | — | 0 | ALL | None |
+
+## 9. PRODUCTION RISK
+
+- User-visible regression on core storefront (homepage/shop/product/cart/header cart)
+- Source-of-truth ambiguity (cannot restore from history)
+- Uncommitted UI without styles
+- Single global stylesheet (high blast radius)
+- No checkpoint before global CSS edits
+- Debug artifacts create confusion
+- Future overwrite risk
+
+## 10. RECOMMENDED NEXT STEP
+
+Recreate missing CSS append-only in app/globals.css (preserve base+append). Prioritize: Header cart → Best Seller → Shop by Category → Shop → Cart → Product Detail → Product Customization → minor form classes → admin. Match existing design tokens. Verify in browser per section (homepage/shop/cart/product). Use visual reference if available (exact colors/spacing may differ otherwise). This is recreation, not recovery.
+
+Q1. Scanned entire project recursively? Yes.
+Q2. Searched every CSS file? Yes.
+Q3. Searched TSX/TS for class definitions? Yes (31 files). No .module.css, no styled-components/emotion, no inline <style>, no style={{}} in affected components.
+Q4. Checked Git history/stash/reflog? Yes (4 commits, no stash, no extras, no dangling; git grep across all 4 returned 0).
+Q5. Checked duplicate/backup project copies? Yes. None contain missing CSS.
+Q6. Checked generated CSS/build output? Yes. No missing rules.
+Q7. Was original working CSS found? No.
+Q8. Exact CSS missing? best-seller-* (29), shop-category-* (13), shop-product-* (18), cart-*/cart-item-* (38), product-detail-* (44), product-customization-* (19), site-cart-* (4), custom-request-wa-link, form-helper (2), variation-* families + editor classes (~167 selectors total).
+Q9. Can any missing CSS be recovered exactly? No — C. NOT RECOVERABLE FROM CURRENT SOURCES. Recreation required.
+Q10. Safest fastest next step? Authorize append-only recreation in app/globals.css by priority above, matching design tokens; verify in browser. Use screenshot if available.
+
+END OF REPORT. NO FILES WERE MODIFIED.

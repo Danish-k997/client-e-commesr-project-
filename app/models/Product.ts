@@ -20,6 +20,61 @@ export interface IProductSpecification {
   unit?: string | null;
 }
 
+export const CUSTOMIZATION_FIELD_TYPES = [
+  "TEXT",
+  "TEXTAREA",
+  "SELECT",
+  "NUMBER",
+  "IMAGE",
+  "DIMENSIONS",
+] as const;
+
+export type CustomizationFieldType = (typeof CUSTOMIZATION_FIELD_TYPES)[number];
+
+export interface IProductCustomizationOption {
+  id: string;
+  value: string;
+}
+
+export interface IProductCustomizationValidation {
+  min?: number | null;
+  max?: number | null;
+}
+
+export interface IProductCustomizationDimensionAxis {
+  enabled: boolean;
+  required: boolean;
+}
+
+export interface IProductCustomizationDimensions {
+  unit: string;
+  width: IProductCustomizationDimensionAxis;
+  height: IProductCustomizationDimensionAxis;
+  depth: IProductCustomizationDimensionAxis;
+}
+
+export interface IProductCustomizationField {
+  id: string;
+  key: string;
+  type: CustomizationFieldType;
+  label: string;
+  required: boolean;
+  placeholder?: string;
+  helpText?: string;
+  options?: IProductCustomizationOption[];
+  validation?: IProductCustomizationValidation;
+  maxFiles?: number | null;
+  maxFileSize?: number | null;
+  acceptedFileTypes?: string[];
+  dimensions?: IProductCustomizationDimensions;
+  sortOrder: number;
+}
+
+export interface IProductCustomization {
+  enabled: boolean;
+  fields: IProductCustomizationField[];
+}
+
 export interface IProduct {
   _id: Types.ObjectId;
   title: string;
@@ -34,6 +89,7 @@ export interface IProduct {
   stock: number;
   variationDefinitions: IProductVariationDefinition[];
   specifications: IProductSpecification[];
+  customization: IProductCustomization;
   status: ProductStatus;
   isFeatured: boolean;
   seoTitle?: string;
@@ -139,6 +195,231 @@ const ProductSpecificationSchema = new mongoose.Schema<IProductSpecification>(
       type: String,
       trim: true,
       default: null,
+    },
+  },
+  { _id: false }
+);
+
+const CustomizationOptionSchema = new mongoose.Schema<IProductCustomizationOption>(
+  {
+    id: {
+      type: String,
+      required: true,
+      trim: true,
+      match: /^opt_[a-zA-Z0-9_-]+$/,
+    },
+    value: {
+      type: String,
+      required: true,
+      trim: true,
+      validate: {
+        validator(value: string) {
+          return typeof value === "string" && value.trim().length > 0;
+        },
+        message: "Customization option value is required.",
+      },
+    },
+  },
+  { _id: false }
+);
+
+const CustomizationValidationSchema = new mongoose.Schema<IProductCustomizationValidation>(
+  {
+    min: {
+      type: Number,
+      default: null,
+      validate: {
+        validator(value: number | null) {
+          return value === null || value === undefined || (Number.isInteger(value) && value >= 0);
+        },
+        message: "Customization minimum must be a non-negative integer.",
+      },
+    },
+    max: {
+      type: Number,
+      default: null,
+      validate: {
+        validator(value: number | null) {
+          return value === null || value === undefined || (Number.isInteger(value) && value >= 0);
+        },
+        message: "Customization maximum must be a non-negative integer.",
+      },
+    },
+  },
+  { _id: false }
+);
+
+const CustomizationDimensionAxisSchema = new mongoose.Schema<IProductCustomizationDimensionAxis>(
+  {
+    enabled: {
+      type: Boolean,
+      default: false,
+    },
+    required: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  { _id: false }
+);
+
+const CustomizationDimensionsSchema = new mongoose.Schema<IProductCustomizationDimensions>(
+  {
+    unit: {
+      type: String,
+      trim: true,
+      default: "cm",
+    },
+    width: {
+      type: CustomizationDimensionAxisSchema,
+      default: () => ({ enabled: false, required: false }),
+    },
+    height: {
+      type: CustomizationDimensionAxisSchema,
+      default: () => ({ enabled: false, required: false }),
+    },
+    depth: {
+      type: CustomizationDimensionAxisSchema,
+      default: () => ({ enabled: false, required: false }),
+    },
+  },
+  { _id: false }
+);
+
+const CustomizationFieldSchema = new mongoose.Schema<IProductCustomizationField>(
+  {
+    id: {
+      type: String,
+      required: true,
+      trim: true,
+      match: /^cust_[a-zA-Z0-9_-]+$/,
+    },
+    key: {
+      type: String,
+      required: true,
+      trim: true,
+      match: /^[a-z][a-z0-9_]*$/,
+    },
+    type: {
+      type: String,
+      required: true,
+      enum: CUSTOMIZATION_FIELD_TYPES,
+    },
+    label: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength: 1,
+      maxlength: 120,
+    },
+    required: {
+      type: Boolean,
+      default: false,
+    },
+    placeholder: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    helpText: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    options: {
+      type: [CustomizationOptionSchema],
+      default: [],
+    },
+    validation: {
+      type: CustomizationValidationSchema,
+      default: () => ({ min: null, max: null }),
+    },
+    maxFiles: {
+      type: Number,
+      default: null,
+      validate: {
+        validator(value: number | null) {
+          return value === null || value === undefined || (Number.isInteger(value) && value >= 1);
+        },
+        message: "Customization max files must be a positive integer.",
+      },
+    },
+    maxFileSize: {
+      type: Number,
+      default: null,
+      validate: {
+        validator(value: number | null) {
+          return value === null || value === undefined || (Number.isInteger(value) && value >= 1);
+        },
+        message: "Customization max file size must be a positive integer.",
+      },
+    },
+    acceptedFileTypes: {
+      type: [String],
+      default: [],
+    },
+    dimensions: {
+      type: CustomizationDimensionsSchema,
+    },
+    sortOrder: {
+      type: Number,
+      default: 0,
+    },
+  },
+  { _id: false }
+);
+
+const CustomizationSchema = new mongoose.Schema<IProductCustomization>(
+  {
+    enabled: {
+      type: Boolean,
+      default: false,
+    },
+    fields: {
+      type: [CustomizationFieldSchema],
+      default: [],
+      validate: {
+        validator(value: IProductCustomizationField[]) {
+          if (!Array.isArray(value)) {
+            return false;
+          }
+
+          if (value.length > 20) {
+            return false;
+          }
+
+          const ids = value.map((field) => field.id);
+          const keys = value.map((field) => field.key);
+
+          if (ids.length !== new Set(ids).size || keys.length !== new Set(keys).size) {
+            return false;
+          }
+
+          return value.every((field) => {
+            if (field.type === "SELECT") {
+              return Array.isArray(field.options) && field.options.length > 0;
+            }
+
+            if (field.type === "DIMENSIONS") {
+              const dimensions = field.dimensions;
+              return Boolean(
+                dimensions && (dimensions.width.enabled || dimensions.height.enabled || dimensions.depth.enabled)
+              );
+            }
+
+            if (field.type === "NUMBER") {
+              const validation = field.validation;
+              if (!validation || validation.min === null || validation.max === null || validation.min === undefined || validation.max === undefined) {
+                return true;
+              }
+              return validation.min <= validation.max;
+            }
+
+            return true;
+          });
+        },
+        message: "Customization configuration is invalid.",
+      },
     },
   },
   { _id: false }
@@ -255,6 +536,10 @@ const ProductSchema = new mongoose.Schema<IProduct>(
         },
         message: "Specification entries cannot be empty.",
       },
+    },
+    customization: {
+      type: CustomizationSchema,
+      default: () => ({ enabled: false, fields: [] }),
     },
     status: {
       type: String,

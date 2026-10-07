@@ -12,12 +12,21 @@ import {
   type ProductSpecification,
   type ProductStatus,
   type ProductVariantPayload,
-  type ProductVariationDefinition,
   useCategories,
   useCreateProduct,
   useSubcategories,
   useUpdateProduct,
 } from "../../lib/api";
+import CustomizationFieldEditor from "./CustomizationFieldEditor";
+import {
+  blankFieldDraft,
+  customizationToDrafts,
+  draftToField,
+  isBlankFieldDraft,
+  MAX_CUSTOMIZATION_FIELDS,
+  validateCustomizationDrafts,
+  type CustomizationFieldDraft,
+} from "./productCustomization";
 
 type ProductFormProps = {
   mode: "create" | "edit";
@@ -26,6 +35,17 @@ type ProductFormProps = {
 
 type ImageField = ProductImagePayload & {
   key: string;
+};
+
+type VariationOptionDraft = {
+  key: string;
+  value: string;
+};
+
+type VariationDefinitionDraft = {
+  key: string;
+  name: string;
+  options: VariationOptionDraft[];
 };
 
 const statuses: ProductStatus[] = ["DRAFT", "ACTIVE", "OUT_OF_STOCK", "ARCHIVED"];
@@ -62,6 +82,18 @@ function initialImages(product?: ProductRecord): ImageField[] {
   return product.images.map((image) => ({ ...image, key: makeKey() }));
 }
 
+function initialVariationDefinitions(product?: ProductRecord): VariationDefinitionDraft[] {
+  if (!product) {
+    return [];
+  }
+
+  return product.variationDefinitions.map((variation) => ({
+    key: makeKey(),
+    name: variation.name,
+    options: variation.options.map((option) => ({ key: makeKey(), value: option })),
+  }));
+}
+
 export default function ProductForm({ mode, product }: ProductFormProps) {
   const router = useRouter();
   const categoriesQuery = useCategories();
@@ -79,8 +111,8 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
   const [seoTitle, setSeoTitle] = useState(product?.seoTitle ?? "");
   const [seoDescription, setSeoDescription] = useState(product?.seoDescription ?? "");
   const [images, setImages] = useState<ImageField[]>(() => initialImages(product));
-  const [variationDefinitions, setVariationDefinitions] = useState<ProductVariationDefinition[]>(
-    product?.variationDefinitions ?? []
+  const [variationDefinitions, setVariationDefinitions] = useState<VariationDefinitionDraft[]>(() =>
+    initialVariationDefinitions(product)
   );
   const [variants, setVariants] = useState<ProductVariantPayload[]>(
     product?.variants?.map((variant) => ({
@@ -93,6 +125,10 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
     })) ?? []
   );
   const [specifications, setSpecifications] = useState<ProductSpecification[]>(product?.specifications ?? []);
+  const [customizationEnabled, setCustomizationEnabled] = useState(product?.customization?.enabled ?? false);
+  const [customizationDrafts, setCustomizationDrafts] = useState<CustomizationFieldDraft[]>(() =>
+    customizationToDrafts(product?.customization)
+  );
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const subcategoriesQuery = useSubcategories(categoryId);
@@ -172,20 +208,65 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
   }
 
   function addVariation() {
-    setVariationDefinitions((current) => [...current, { name: "", options: [""] }]);
+    setVariationDefinitions((current) => [
+      ...current,
+      { key: makeKey(), name: "", options: [{ key: makeKey(), value: "" }] },
+    ]);
   }
 
-  function updateVariation(index: number, patch: Partial<ProductVariationDefinition>) {
+  function updateVariationName(variationKey: string, name: string) {
     setVariationDefinitions((current) =>
-      current.map((variation, variationIndex) => (variationIndex === index ? { ...variation, ...patch } : variation))
+      current.map((variation) => (variation.key === variationKey ? { ...variation, name } : variation))
     );
+  }
+
+  function addOption(variationKey: string) {
+    setVariationDefinitions((current) =>
+      current.map((variation) =>
+        variation.key === variationKey
+          ? { ...variation, options: [...variation.options, { key: makeKey(), value: "" }] }
+          : variation
+      )
+    );
+  }
+
+  function updateOption(variationKey: string, optionKey: string, value: string) {
+    setVariationDefinitions((current) =>
+      current.map((variation) =>
+        variation.key === variationKey
+          ? {
+              ...variation,
+              options: variation.options.map((option) =>
+                option.key === optionKey ? { ...option, value } : option
+              ),
+            }
+          : variation
+      )
+    );
+  }
+
+  function removeOption(variationKey: string, optionKey: string) {
+    setVariationDefinitions((current) =>
+      current.map((variation) =>
+        variation.key === variationKey
+          ? { ...variation, options: variation.options.filter((option) => option.key !== optionKey) }
+          : variation
+      )
+    );
+  }
+
+  function removeVariation(variationKey: string) {
+    setVariationDefinitions((current) => current.filter((variation) => variation.key !== variationKey));
   }
 
   function addVariant() {
     const attributes = Object.fromEntries(
       variationDefinitions
         .filter((variation) => variation.name.trim())
-        .map((variation) => [variation.name.trim(), variation.options[0]?.trim() || ""])
+        .map((variation) => [
+          variation.name.trim(),
+          variation.options.find((option) => option.value.trim())?.value.trim() || "",
+        ])
     );
 
     setVariants((current) => [
@@ -203,6 +284,34 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
 
   function updateVariant(index: number, patch: Partial<ProductVariantPayload>) {
     setVariants((current) => current.map((variant, variantIndex) => (variantIndex === index ? { ...variant, ...patch } : variant)));
+  }
+
+  function updateCustomizationDraft(index: number, patch: Partial<CustomizationFieldDraft>) {
+    setCustomizationDrafts((current) =>
+      current.map((draft, draftIndex) => (draftIndex === index ? { ...draft, ...patch } : draft))
+    );
+  }
+
+  function addCustomizationField() {
+    setCustomizationDrafts((current) => [...current, blankFieldDraft()]);
+  }
+
+  function removeCustomizationField(index: number) {
+    setCustomizationDrafts((current) => current.filter((_, draftIndex) => draftIndex !== index));
+  }
+
+  function moveCustomizationField(index: number, direction: -1 | 1) {
+    setCustomizationDrafts((current) => {
+      const next = [...current];
+      const targetIndex = index + direction;
+
+      if (targetIndex < 0 || targetIndex >= next.length) {
+        return current;
+      }
+
+      [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+      return next;
+    });
   }
 
   function validate() {
@@ -254,16 +363,22 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
       return "Exactly one image must be primary.";
     }
 
-    const variationNames = variationDefinitions.map((variation) => variation.name.trim().toLowerCase()).filter(Boolean);
+    const normalizedVariations = variationDefinitions.map((variation) => ({
+      name: variation.name.trim(),
+      options: variation.options.map((option) => option.value.trim()).filter(Boolean),
+    }));
+    const variationNames = normalizedVariations.map((variation) => variation.name.toLowerCase()).filter(Boolean);
 
     if (variationNames.length !== new Set(variationNames).size) {
       return "Variation names must be unique.";
     }
 
-    for (const variation of variationDefinitions) {
-      const options = variation.options.map((option) => option.trim()).filter(Boolean);
-
-      if (variation.name.trim() && (options.length === 0 || options.length !== new Set(options.map((option) => option.toLowerCase())).size)) {
+    for (const variation of normalizedVariations) {
+      if (
+        variation.name &&
+        (variation.options.length === 0 ||
+          variation.options.length !== new Set(variation.options.map((option) => option.toLowerCase())).size)
+      ) {
         return "Variation options must be present and unique.";
       }
     }
@@ -288,6 +403,12 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
 
     if (variants.some((variant) => variant.imageId && !imageReferences.some((image) => image.value === variant.imageId))) {
       return "Variant images must reference a product image.";
+    }
+
+    const customizationValidationError = validateCustomizationDrafts(customizationEnabled, customizationDrafts);
+
+    if (customizationValidationError) {
+      return customizationValidationError;
     }
 
     if (!statuses.includes(status)) {
@@ -324,7 +445,9 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
         .filter((variation) => variation.name.trim())
         .map((variation) => ({
           name: variation.name.trim(),
-          options: variation.options.map((option) => option.trim()).filter(Boolean),
+          options: variation.options
+            .map((option) => option.value.trim())
+            .filter(Boolean),
         })),
       specifications: specifications
         .filter((specification) => specification.name.trim() && String(specification.value).trim())
@@ -333,6 +456,12 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
           value: specification.value,
           unit: specification.unit?.trim() || null,
         })),
+      customization: {
+        enabled: customizationEnabled,
+        fields: customizationDrafts
+          .filter((draft) => !isBlankFieldDraft(draft))
+          .map((draft) => draftToField(draft)),
+      },
       status,
       isFeatured,
       seoTitle: seoTitle.trim(),
@@ -361,7 +490,11 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
     try {
       const savedProduct = await mutation.mutateAsync(buildPayload());
       setNotice(mode === "create" ? "Product created." : "Product updated.");
-      router.push(`/admin/products/${savedProduct._id}/edit`);
+      if (mode === "create") {
+        router.push("/admin/products");
+      } else {
+        router.push(`/admin/products/${savedProduct._id}/edit`);
+      }
     } catch (mutationError) {
       setError(mutationError instanceof ApiClientError ? mutationError.message : "Product could not be saved.");
     }
@@ -465,9 +598,9 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
             </select>
           </div>
         </div>
-        <label className="product-checkbox">
+        <label className="product-checkbox" title="Shows this product in the homepage Best Seller shelf.">
           <input type="checkbox" checked={isFeatured} onChange={(event) => setIsFeatured(event.target.checked)} />
-          Featured product
+          Best Seller
         </label>
       </section>
 
@@ -515,17 +648,66 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
           <h2>Variations</h2>
           <button className="secondary-btn" type="button" onClick={addVariation}>Add variation</button>
         </div>
-        {variationDefinitions.map((variation, index) => (
-          <div className="product-repeat-row" key={`variation-${index}`}>
-            <input placeholder="Name, e.g. Material" value={variation.name} onChange={(event) => updateVariation(index, { name: event.target.value })} />
-            <input
-              placeholder="Options separated by commas"
-              value={variation.options.join(", ")}
-              onChange={(event) => updateVariation(index, { options: event.target.value.split(",").map((option) => option.trim()) })}
-            />
-            <button type="button" onClick={() => setVariationDefinitions((current) => current.filter((_, variationIndex) => variationIndex !== index))}>Remove</button>
+        {variationDefinitions.length === 0 ? (
+          <div className="hero-admin-state">
+            <p>
+              No variations yet. Add a variation such as Colour or Size, then add its options. Options belong inside a
+              single variation.
+            </p>
           </div>
-        ))}
+        ) : (
+          <div className="variation-definition-list">
+            {variationDefinitions.map((variation, definitionIndex) => (
+              <article className="variation-definition-editor" key={variation.key}>
+                <div className="variation-definition-head">
+                  <span className="variation-definition-index">Variation {definitionIndex + 1}</span>
+                  <button type="button" onClick={() => removeVariation(variation.key)}>
+                    Remove variation
+                  </button>
+                </div>
+
+                <div className="form-field">
+                  <label htmlFor={`variation-name-${variation.key}`}>Name</label>
+                  <input
+                    id={`variation-name-${variation.key}`}
+                    value={variation.name}
+                    placeholder="e.g. Colour"
+                    onChange={(event) => updateVariationName(variation.key, event.target.value)}
+                  />
+                </div>
+
+                <div className="variation-options">
+                  <div className="variation-options-head">
+                    <span>Options</span>
+                    <button type="button" onClick={() => addOption(variation.key)}>
+                      Add option
+                    </button>
+                  </div>
+
+                  {variation.options.length === 0 ? (
+                    <div className="hero-admin-state">
+                      <p>No options yet. Add options like Red or Green.</p>
+                    </div>
+                  ) : (
+                    variation.options.map((option) => (
+                      <div className="product-repeat-row variation-option-row" key={option.key}>
+                        <input
+                          value={option.value}
+                          placeholder="e.g. Red"
+                          aria-label={`Option for ${variation.name.trim() || `variation ${definitionIndex + 1}`}`}
+                          onChange={(event) => updateOption(variation.key, option.key, event.target.value)}
+                        />
+                        <button type="button" onClick={() => removeOption(variation.key, option.key)}>
+                          Remove
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="product-form-section">
@@ -566,7 +748,7 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
             </div>
             <div className="product-variant-attributes">
               {variationDefinitions.filter((variation) => variation.name.trim()).map((variation) => (
-                <div className="form-field" key={variation.name}>
+                <div className="form-field" key={variation.key}>
                   <label>{variation.name}</label>
                   <select
                     value={String(variant.attributes[variation.name] ?? "")}
@@ -577,9 +759,13 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
                     }
                   >
                     <option value="">Select option</option>
-                    {variation.options.filter(Boolean).map((option) => (
-                      <option key={option} value={option}>{option}</option>
-                    ))}
+                    {variation.options
+                      .filter((option) => option.value.trim())
+                      .map((option) => (
+                        <option key={option.key} value={option.value.trim()}>
+                          {option.value.trim()}
+                        </option>
+                      ))}
                   </select>
                 </div>
               ))}
@@ -608,6 +794,55 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
             <button type="button" onClick={() => setSpecifications((current) => current.filter((_, itemIndex) => itemIndex !== index))}>Remove</button>
           </div>
         ))}
+      </section>
+
+      <section className="product-form-section">
+        <div className="product-form-section-heading">
+          <h2>Customization</h2>
+          <button
+            className="secondary-btn"
+            type="button"
+            disabled={customizationDrafts.length >= MAX_CUSTOMIZATION_FIELDS}
+            onClick={addCustomizationField}
+          >
+            Add custom field
+          </button>
+        </div>
+        <label className="product-checkbox">
+          <input
+            type="checkbox"
+            checked={customizationEnabled}
+            onChange={(event) => setCustomizationEnabled(event.target.checked)}
+          />
+          Enable product customization
+        </label>
+        <p className="customization-section-note">
+          Configure fields that customers will fill in when ordering this product. Disabling customization keeps your
+          fields safely stored for later.
+        </p>
+        {customizationEnabled && (
+          <div className="customization-field-list">
+            {customizationDrafts.length === 0 ? (
+              <div className="hero-admin-state">
+                No customization fields yet. Add one so customers can personalize this product.
+              </div>
+            ) : (
+              customizationDrafts.map((draft, index) => (
+                <CustomizationFieldEditor
+                  key={draft.id}
+                  draft={draft}
+                  index={index}
+                  canMoveUp={index > 0}
+                  canMoveDown={index < customizationDrafts.length - 1}
+                  onChange={updateCustomizationDraft}
+                  onMoveUp={(itemIndex) => moveCustomizationField(itemIndex, -1)}
+                  onMoveDown={(itemIndex) => moveCustomizationField(itemIndex, 1)}
+                  onRemove={removeCustomizationField}
+                />
+              ))
+            )}
+          </div>
+        )}
       </section>
 
       <section className="product-form-section">
