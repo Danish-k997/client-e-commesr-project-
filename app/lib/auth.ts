@@ -69,9 +69,35 @@ if (!process.env.BETTER_AUTH_SECRET) {
   throw new Error("BETTER_AUTH_SECRET is not defined");
 }
 
+const configuredOrigins = [
+  "http://localhost:3000",
+  "https://client-e-commesr-project.vercel.app",
+  "https://client-e-commesr-project-q6cxmls9c.vercel.app",
+  "https://client-e-commesr-project.onrender.com",
+  ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
+  ...(process.env.BETTER_AUTH_TRUSTED_ORIGINS
+    ? process.env.BETTER_AUTH_TRUSTED_ORIGINS.split(",")
+        .map((origin) => origin.trim())
+        .filter(Boolean)
+    : []),
+];
+
+const trustedOrigins = Array.from(new Set(configuredOrigins));
+
+const resolveBaseURL = () => {
+  if (process.env.BETTER_AUTH_URL) {
+    return process.env.BETTER_AUTH_URL;
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  return "http://localhost:3000";
+};
+
 export const auth = betterAuth({
-  baseURL: process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
+  baseURL: resolveBaseURL(),
   secret: process.env.BETTER_AUTH_SECRET,
+  trustedOrigins,
   database: mongodbAdapter(mongoDb, {
     client: mongoClient,
   }),
@@ -86,6 +112,15 @@ export const auth = betterAuth({
     },
   },
   advanced: {
+    trustedProxyHeaders: true,
+    ipAddress: {
+      ipAddressHeaders: [
+        "x-render-client-ip",
+        "cf-connecting-ip",
+        "x-real-ip",
+        "x-forwarded-for",
+      ],
+    },
     backgroundTasks: {
       handler: (task) =>
         after(async () => {
