@@ -1,0 +1,117 @@
+.related-products-section {
+  width: 100%;
+  margin: 56px auto 0;
+  padding-top: 48px;
+  border-top: 1px solid var(--border);
+}
+
+.related-products-header {
+  margin-bottom: 28px;
+}
+
+.related-products-eyebrow {
+  margin: 0 0 8px;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.related-products-title {
+  margin: 0;
+  font-family: var(--font-outfit), Arial, sans-serif;
+  font-size: clamp(1.6rem, 2.8vw, 2.2rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+}
+
+.related-products-subtitle {
+  margin: 10px 0 0;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.related-products-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.related-skeleton-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: var(--surface);
+}
+
+.related-skeleton-media {
+  aspect-ratio: 4 / 5;
+  border-radius: 14px;
+  background: linear-gradient(90deg, #ece9e1 0%, #f6f4ef 50%, #ece9e1 100%);
+  background-size: 200% 100%;
+  animation: relatedShimmer 1.5s infinite;
+}
+
+.related-skeleton-line {
+  height: 14px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #ece9e1 0%, #f6f4ef 50%, #ece9e1 100%);
+  background-size: 200% 100%;
+  animation: relatedShimmer 1.5s infinite;
+}
+
+.related-skeleton-line.short {
+  width: 55%;
+}
+
+@keyframes relatedShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: 0 0;
+  }
+}
+
+@media (max-width: 1080px) {
+  .related-products-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+  }
+}
+
+@media (max-width: 768px) {
+  .related-products-section {
+    margin-top: 40px;
+    padding-top: 36px;
+  }
+
+  .related-products-header {
+    margin-bottom: 20px;
+  }
+
+  .related-products-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .related-products-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .related-skeleton-media,
+  .related-skeleton-line {
+    animation: none;
+  }
+}

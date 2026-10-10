@@ -4,6 +4,7 @@ import { apiRequest } from "./client";
 import type { ApiSuccessResponse } from "./types";
 
 export type ProductStatus = "DRAFT" | "ACTIVE" | "OUT_OF_STOCK" | "ARCHIVED";
+export type DeliveryType = "FREE" | "PAID";
 
 export type ProductImagePayload = {
   clientId?: string;
@@ -142,8 +143,11 @@ export type CustomerProductRecord = {
   images: ProductImageRecord[];
   basePrice: number;
   compareAtPrice?: number | null;
+  deliveryType?: DeliveryType;
+  deliveryFee?: number;
   variationDefinitions: ProductVariationDefinition[];
   specifications: ProductSpecification[];
+  customizable?: boolean;
   customization?: CustomizationConfig;
   status: ProductStatus;
   isFeatured: boolean;
@@ -168,8 +172,11 @@ export type ProductRecord = {
   basePrice: number;
   compareAtPrice?: number | null;
   stock?: number;
+  deliveryType?: DeliveryType;
+  deliveryFee?: number;
   variationDefinitions: ProductVariationDefinition[];
   specifications: ProductSpecification[];
+  customizable?: boolean;
   customization?: CustomizationConfig;
   status: ProductStatus;
   isFeatured: boolean;
@@ -193,6 +200,8 @@ export type ProductPayload = {
   basePrice: number;
   compareAtPrice?: number | null;
   stock: number;
+  deliveryType?: DeliveryType;
+  deliveryFee?: number;
   variationDefinitions: ProductVariationDefinition[];
   specifications: ProductSpecification[];
   customization: CustomizationConfig;
@@ -211,12 +220,14 @@ export type ProductListParams = {
   categoryId?: string;
   subcategoryId?: string;
   isFeatured?: boolean;
+  customizable?: boolean;
   sort?: "newest" | "oldest" | "price_asc" | "price_desc" | "title_asc" | "title_desc";
+  excludeProductId?: string;
 };
 
 export type CustomerProductListParams = Pick<
   ProductListParams,
-  "page" | "limit" | "search" | "categoryId" | "subcategoryId" | "isFeatured"
+  "page" | "limit" | "search" | "categoryId" | "subcategoryId" | "isFeatured" | "customizable" | "excludeProductId"
 > & {
   sort?: ProductListParams["sort"];
 };
@@ -323,6 +334,8 @@ export async function listProducts(params: ProductListParams, signal?: AbortSign
       categoryId: params.categoryId || undefined,
       subcategoryId: params.subcategoryId || undefined,
       isFeatured: typeof params.isFeatured === "boolean" ? String(params.isFeatured) : undefined,
+      customizable: params.customizable ? "true" : undefined,
+      excludeProductId: params.excludeProductId || undefined,
     },
     signal,
   });
@@ -341,6 +354,8 @@ export async function listCustomerProducts(params: CustomerProductListParams, si
       categoryId: params.categoryId || undefined,
       subcategoryId: params.subcategoryId || undefined,
       isFeatured: typeof params.isFeatured === "boolean" ? String(params.isFeatured) : undefined,
+      customizable: params.customizable ? "true" : undefined,
+      excludeProductId: params.excludeProductId || undefined,
     },
     signal,
   });
@@ -480,13 +495,17 @@ export function useAdminProducts(params: ProductListParams) {
   });
 }
 
-export function useCustomerProducts(params: CustomerProductListParams) {
+export function useCustomerProducts(
+  params: CustomerProductListParams,
+  options?: { enabled?: boolean }
+) {
   return useQuery({
     queryKey: productQueryKeys.customerList(params),
     queryFn: ({ signal }) => listCustomerProducts(params, signal),
     placeholderData: keepPreviousData,
     staleTime: 45_000,
     gcTime: 5 * 60_000,
+    enabled: options?.enabled,
   });
 }
 

@@ -3,7 +3,7 @@ import "server-only";
 import mongoose from "mongoose";
 
 import { Cart, Product, ProductVariant } from "../../models";
-import type { ICart, ICartItem, IProduct, IProductCustomizationField, IProductImage, IProductVariant } from "../../models";
+import type { DeliveryType, ICart, ICartItem, IProduct, IProductCustomizationField, IProductImage, IProductVariant } from "../../models";
 import { PUBLIC_STATUSES, findProductVariants, findPublicProduct } from "../products/_utils";
 import { ApiError, requireObjectId } from "../_utils/responses";
 import {
@@ -33,7 +33,13 @@ export type SerializedCartItem = {
   productId: string;
   variantId: string | null;
   quantity: number;
-  product: { title: string; slug: string; image: string | null } | null;
+  product: {
+    title: string;
+    slug: string;
+    image: string | null;
+    deliveryType: DeliveryType;
+    deliveryFee: number;
+  } | null;
   variant: { _id: string; sku: string; attributes: Record<string, string | number | boolean | null> } | null;
   price: number | null;
   compareAtPrice: number | null;
@@ -46,6 +52,7 @@ export type SerializedCart = {
   _id: string | null;
   userId: string;
   items: SerializedCartItem[];
+  deliveryTotal: number;
   updatedAt: string | null;
 };
 
@@ -178,7 +185,39 @@ export async function removeCartItem(userId: string, itemId: string): Promise<Se
 
 export async function clearCart(userId: string): Promise<SerializedCart> {
   await Cart.deleteOne({ userId });
-  return { _id: null, userId, items: [], updatedAt: null };
+  return { _id: null, userId, items: [], deliveryTotal: 0, updatedAt: null };
+}
+
+export async function clearPurchasedCartItems(
+  userId: string,
+  purchasedItems: Array<{ productId: string | mongoose.Types.ObjectId; variantId?: string | mongoose.Types.ObjectId | null }>
+): Promise<SerializedCart> {
+  const cart = await Cart.findOne({ userId });
+  if (!cart) {
+    return { _id: null, userId, items: [], deliveryTotal: 0, updatedAt: null };
+  }
+
+  const remainingItems = cart.items.filter((entry) => {
+    const entryProdId = entry.productId.toString();
+    const entryVarId = entry.variantId ? entry.variantId.toString() : null;
+
+    const isPurchased = purchasedItems.some((pItem) => {
+      const pProdId = pItem.productId ? pItem.productId.toString() : "";
+      const pVarId = pItem.variantId ? pItem.variantId.toString() : null;
+      return pProdId === entryProdId && pVarId === entryVarId;
+    });
+
+    return !isPurchased;
+  });
+
+  if (remainingItems.length === 0) {
+    await Cart.deleteOne({ userId });
+    return { _id: null, userId, items: [], deliveryTotal: 0, updatedAt: null };
+  } else {
+    cart.set("items", remainingItems);
+    const updated = await cart.save();
+    return serializeCart(userId, updated);
+  }
 }
 
 async function validateSelection(input: AddCartItemInput): Promise<ValidatedSelection> {
@@ -408,7 +447,7 @@ function parseCustomizationSubmission(raw: unknown, product: IProduct): CartCust
   });
 }
 
-function toCustomizationFields(fields: IProductCustomizationField[] | undefined): CustomizationField[] {
+export function toCustomizationFields(fields: IProductCustomizationField[] | undefined): CustomizationField[] {
   return (fields ?? []).map((field): CustomizationField => {
     const base = {
       id: field.id,
@@ -458,6 +497,21 @@ function toCustomizationFields(fields: IProductCustomizationField[] | undefined)
   });
 }
 
+export function calculateCartDeliveryTotal(items: SerializedCartItem[]): number {
+  return items.reduce((total, item) => {
+    if (
+      item.product &&
+      item.product.deliveryType === "PAID" &&
+      typeof item.product.deliveryFee === "number" &&
+      Number.isFinite(item.product.deliveryFee) &&
+      item.product.deliveryFee > 0
+    ) {
+      return total + item.product.deliveryFee;
+    }
+    return total;
+  }, 0);
+}
+
 async function serializeCart(userId: string, cart: ICart | null): Promise<SerializedCart> {
   const items = cart?.items ?? [];
   const productIds = Array.from(new Set(items.map((item) => item.productId.toString())));
@@ -468,7 +522,7 @@ async function serializeCart(userId: string, cart: ICart | null): Promise<Serial
   const [products, variants] = await Promise.all([
     productIds.length > 0
       ? Product.find({ _id: { $in: productIds }, status: { $in: PUBLIC_STATUSES } })
-          .select("title slug images basePrice compareAtPrice status stock")
+          .select("title slug images basePrice compareAtPrice status stock deliveryType deliveryFee")
           .lean()
       : Promise.resolve([]),
     variantIds.length > 0
@@ -479,16 +533,19 @@ async function serializeCart(userId: string, cart: ICart | null): Promise<Serial
   const productMap = new Map(products.map((product) => [product._id.toString(), product]));
   const variantMap = new Map(variants.map((variant) => [variant._id.toString(), variant]));
 
+  const serializedItems = items.map((item) =>
+    serializeCartItem(
+      item,
+      productMap.get(item.productId.toString()) ?? null,
+      item.variantId ? (variantMap.get(item.variantId.toString()) ?? null) : null
+    )
+  );
+
   return {
     _id: cart?._id ? cart._id.toString() : null,
     userId,
-    items: items.map((item) =>
-      serializeCartItem(
-        item,
-        productMap.get(item.productId.toString()) ?? null,
-        item.variantId ? (variantMap.get(item.variantId.toString()) ?? null) : null
-      )
-    ),
+    items: serializedItems,
+    deliveryTotal: calculateCartDeliveryTotal(serializedItems),
     updatedAt: cart?.updatedAt ? new Date(cart.updatedAt).toISOString() : null,
   };
 }
@@ -522,12 +579,29 @@ function serializeCartItem(item: ICartItem, product: IProduct | null, variant: I
     }
   }
 
+  const deliveryType: DeliveryType = product?.deliveryType === "PAID" ? "PAID" : "FREE";
+  const deliveryFee: number =
+    deliveryType === "PAID" &&
+    typeof product?.deliveryFee === "number" &&
+    Number.isFinite(product.deliveryFee) &&
+    product.deliveryFee > 0
+      ? product.deliveryFee
+      : 0;
+
   return {
     itemId: item._id.toString(),
     productId: item.productId.toString(),
     variantId: item.variantId ? item.variantId.toString() : null,
     quantity: item.quantity,
-    product: product ? { title: product.title, slug: product.slug, image: primaryImage(product.images) } : null,
+    product: product
+      ? {
+          title: product.title,
+          slug: product.slug,
+          image: primaryImage(product.images),
+          deliveryType,
+          deliveryFee,
+        }
+      : null,
     variant: variant ? { _id: variant._id.toString(), sku: variant.sku, attributes: variant.attributes } : null,
     price,
     compareAtPrice: product?.compareAtPrice ?? null,

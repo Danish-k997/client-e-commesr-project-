@@ -1,0 +1,472 @@
+.panel,
+.detail {
+  width: min(100% - 40px, 1440px);
+  min-width: 0;
+  margin: 0 auto;
+  padding: 32px 0 64px;
+}
+
+.panel.admin-custom-requests-page {
+  width: min(100% - 40px, 1440px);
+}
+
+.detail.admin-custom-request-detail {
+  width: min(100% - 40px, 1440px);
+}
+
+.panel {
+  display: grid;
+  align-content: start;
+  gap: 26px;
+}
+
+.detail {
+  display: grid;
+  align-content: start;
+  gap: 22px;
+}
+
+.panel :global(.admin-custom-requests-header),
+.detail > header {
+  min-width: 0;
+}
+
+.panel :global(.admin-custom-requests-header h1),
+.detail > header h1 {
+  margin: 8px 0 0;
+  font-family: var(--font-outfit), Arial, sans-serif;
+  font-size: clamp(1.8rem, 3.6vw, 3rem);
+  letter-spacing: -0.045em;
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+}
+
+.panel :global(.admin-custom-requests-header p) {
+  max-width: 760px;
+  margin: 10px 0 0;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.panel :global(.admin-custom-requests-toolbar) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.panel :global(.admin-custom-requests-toolbar .form-field) {
+  width: min(100%, 260px);
+}
+
+.panel :global(.admin-custom-requests-toolbar select) {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  padding: 0 12px;
+  color: var(--text);
+  font: inherit;
+}
+
+.panel :global(.admin-custom-requests-toolbar select:focus-visible),
+.detail :global(select:focus-visible),
+.detail :global(textarea:focus-visible),
+.panel :global(a:focus-visible),
+.panel :global(button:focus-visible),
+.detail :global(a:focus-visible),
+.detail :global(button:focus-visible) {
+  outline: 3px solid rgba(150, 185, 0, 0.48);
+  outline-offset: 2px;
+}
+
+.results {
+  display: flex;
+  min-width: 0;
+  min-height: 520px;
+  align-items: flex-start;
+}
+
+.results > :global(.hero-admin-state) {
+  width: 100%;
+  min-height: 500px;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 10px;
+  padding: 24px;
+  overflow-wrap: anywhere;
+}
+
+.results :global(.hero-admin-state p) {
+  margin: 0;
+}
+
+.results :global(.hero-admin-state button) {
+  min-height: 42px;
+  padding-inline: 16px;
+}
+
+.panel :global(.admin-custom-requests-table-wrap) {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-gutter: stable;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 14px 30px -24px rgba(24, 24, 27, 0.14);
+}
+
+.panel :global(.admin-custom-requests-table) {
+  width: 1160px;
+  min-width: 1160px;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.panel :global(.admin-custom-requests-table th),
+.panel :global(.admin-custom-requests-table td) {
+  padding: 13px 12px;
+  border-bottom: 1px solid rgba(228, 226, 220, 0.9);
+  text-align: left;
+  vertical-align: top;
+}
+
+.panel :global(.admin-custom-requests-table th) {
+  background: var(--surface-soft);
+  color: var(--text-muted);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.panel :global(.admin-custom-requests-table th:nth-child(1)) { width: 145px; }
+.panel :global(.admin-custom-requests-table th:nth-child(2)) { width: 260px; }
+.panel :global(.admin-custom-requests-table th:nth-child(3)) { width: 62px; }
+.panel :global(.admin-custom-requests-table th:nth-child(4)) { width: 132px; }
+.panel :global(.admin-custom-requests-table th:nth-child(5)) { width: 60px; }
+.panel :global(.admin-custom-requests-table th:nth-child(6)) { width: 124px; }
+.panel :global(.admin-custom-requests-table th:nth-child(7)) { width: 58px; }
+.panel :global(.admin-custom-requests-table th:nth-child(8)) { width: 132px; }
+.panel :global(.admin-custom-requests-table th:nth-child(9)) { width: 187px; }
+
+.panel :global(.admin-custom-requests-table tbody tr:hover) {
+  background: rgba(250, 249, 245, 0.72);
+}
+
+.panel :global(.admin-custom-requests-table tbody tr:last-child td) {
+  border-bottom: 0;
+}
+
+.panel :global(.cr-row-name),
+.panel :global(.cr-row-phone),
+.panel :global(.cr-row-desc) {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.panel :global(.cr-row-name) {
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.panel :global(.cr-row-phone),
+.panel :global(.cr-row-files) {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.panel :global(.cr-row-desc) {
+  display: block;
+  max-width: 100%;
+  margin-top: 2px;
+  color: #595a54;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.panel :global(.cr-status-badge) {
+  max-width: 100%;
+  width: fit-content;
+  padding: 6px 9px;
+  font-size: 0.59rem;
+  letter-spacing: 0.08em;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.panel :global(.cr-row-unread) {
+  background: rgba(204, 255, 0, 0.08);
+}
+
+.panel :global(.hero-admin-actions) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 7px;
+}
+
+.panel :global(.hero-admin-actions .product-admin-action-link) {
+  display: inline-flex;
+  max-width: 100%;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  overflow-wrap: anywhere;
+  padding: 7px 9px;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.panel :global(.hero-product-pagination) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 0;
+}
+
+.panel :global(.hero-product-pagination button) {
+  min-height: 42px;
+  padding: 8px 13px;
+}
+
+.panel :global(.hero-product-pagination span) {
+  text-align: center;
+}
+
+.detailState {
+  display: grid;
+  width: min(100% - 40px, 1440px);
+  min-height: 640px;
+  align-content: start;
+  margin: 0 auto;
+  padding: 40px 0;
+}
+
+.detailState > :global(.hero-admin-state) {
+  min-height: 480px;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  overflow-wrap: anywhere;
+}
+
+.detail :global(.admin-custom-request-card) {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 14px 30px -24px rgba(24, 24, 27, 0.14);
+}
+
+.detail :global(.admin-custom-request-card-header) {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 22px;
+  border-bottom: 1px solid rgba(228, 226, 220, 0.9);
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.detail :global(.admin-custom-request-card-header h2) {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.1rem;
+}
+
+.detail :global(.admin-custom-request-card-body) {
+  display: grid;
+  min-width: 0;
+  gap: 18px;
+  padding: 22px;
+}
+
+.detail :global(.cr-detail-field) {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+}
+
+.detail :global(.cr-detail-label) {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.detail :global(.cr-detail-value) {
+  min-width: 0;
+  color: var(--text);
+  font-size: 0.94rem;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.detail :global(.cr-detail-files) {
+  display: grid;
+  min-width: 0;
+  gap: 10px;
+}
+
+.detail :global(.cr-detail-file) {
+  display: flex;
+  min-width: 0;
+  max-width: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  overflow-wrap: anywhere;
+}
+
+.detail :global(.cr-detail-file > div) {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.detail :global(.cr-detail-file a) {
+  flex: 0 0 auto;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.detail :global(.cr-detail-actions) {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.detail :global(.cr-detail-actions .primary-btn) {
+  width: auto;
+  max-width: 100%;
+  min-height: 46px;
+  padding: 0 18px;
+  border-radius: 10px;
+  font-size: 0.76rem;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+.detail :global(form) {
+  display: grid;
+  min-width: 0;
+  gap: 16px;
+}
+
+.detail :global(.form-field) {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+}
+
+.detail :global(.form-field label) {
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  font-weight: 750;
+}
+
+.detail :global(select),
+.detail :global(textarea) {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  padding: 11px 13px;
+  color: var(--text);
+  font: inherit;
+}
+
+.detail :global(textarea) {
+  min-height: 120px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.detail :global(.cr-detail-actions button) {
+  min-width: 120px;
+  cursor: pointer;
+}
+
+.detail :global(.hero-admin-state) {
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+
+@media (max-width: 980px) {
+  .panel,
+  .detail {
+    width: min(100% - 32px, 100%);
+  }
+
+  .panel.admin-custom-requests-page,
+  .detail.admin-custom-request-detail {
+    width: min(100% - 32px, 100%);
+  }
+}
+
+@media (max-width: 600px) {
+  .panel,
+  .detail {
+    width: min(100% - 24px, 100%);
+    padding-top: 24px;
+    padding-bottom: 40px;
+    gap: 20px;
+  }
+
+  .results {
+    min-height: 420px;
+  }
+
+  .results > :global(.hero-admin-state) {
+    min-height: 400px;
+  }
+
+  .panel :global(.hero-product-pagination) {
+    justify-content: center;
+  }
+
+  .detailState {
+    width: min(100% - 24px, 100%);
+    min-height: 640px;
+  }
+
+  .detail :global(.admin-custom-request-card-header),
+  .detail :global(.admin-custom-request-card-body) {
+    padding: 16px;
+  }
+
+  .detail :global(.cr-detail-actions .primary-btn) {
+    width: 100%;
+  }
+}

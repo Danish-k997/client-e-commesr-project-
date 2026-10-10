@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import {
@@ -58,15 +59,78 @@ function formatDate(value?: string) {
   }).format(new Date(value));
 }
 
+const TRUSTED_IMAGE_HOSTS = new Set(["res.cloudinary.com", "images.unsplash.com", "lh3.googleusercontent.com"]);
+
+function isConfiguredImageUrl(url?: string | null): boolean {
+  if (!url || typeof url !== "string") {
+    return false;
+  }
+  const trimmed = url.trim();
+  if (!trimmed) {
+    return false;
+  }
+  if (trimmed.startsWith("/")) {
+    return true;
+  }
+  try {
+    const parsed = new URL(trimmed);
+    return parsed.protocol === "https:" && TRUSTED_IMAGE_HOSTS.has(parsed.hostname);
+  } catch {
+    return false;
+  }
+}
+
 function getPrimaryImage(product: ProductRecord) {
-  return product.images.find((image) => image.isPrimary) ?? product.images[0];
+  return (
+    product.images.find((image) => image.isPrimary && Boolean(image.url)) ??
+    product.images.find((image) => Boolean(image.url)) ??
+    product.images[0]
+  );
+}
+
+function ProductAdminThumb({
+  image,
+  title,
+}: {
+  image?: { url?: string | null; altText?: string | null } | null;
+  title: string;
+}) {
+  const [hasError, setHasError] = useState(false);
+  const url = image?.url?.trim();
+  const canRender = Boolean(url && isConfiguredImageUrl(url) && !hasError);
+
+  return (
+    <div className="hero-admin-thumb product-admin-thumb">
+      {canRender && url ? (
+        <Image
+          className="hero-admin-thumb-image"
+          src={url}
+          alt={image?.altText || title}
+          width={96}
+          height={72}
+          onError={() => setHasError(true)}
+        />
+      ) : (
+        <span className="hero-admin-thumb-placeholder">No image</span>
+      )}
+    </div>
+  );
 }
 
 export default function ProductManagementPanel() {
+  const searchParams = useSearchParams();
+  const statusParam = searchParams.get("status");
+  const initialStatus: "ALL" | ProductStatus =
+    statusParam && productStatuses.includes(statusParam as ProductStatus)
+      ? (statusParam as ProductStatus)
+      : "ALL";
+  const initialSearch = searchParams.get("search") ?? "";
+  const initialCategory = searchParams.get("category") ?? "";
+
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<"ALL" | ProductStatus>("ALL");
-  const [categoryId, setCategoryId] = useState("");
+  const [search, setSearch] = useState(initialSearch);
+  const [status, setStatus] = useState<"ALL" | ProductStatus>(initialStatus);
+  const [categoryId, setCategoryId] = useState(initialCategory);
   const [subcategoryId, setSubcategoryId] = useState("");
   const [notice, setNotice] = useState("");
   const debouncedSearch = useDebouncedValue(search);
@@ -264,17 +328,7 @@ export default function ProductManagementPanel() {
                   return (
                     <tr key={product._id}>
                       <td>
-                        <div className="hero-admin-thumb product-admin-thumb">
-                          {primaryImage?.url ? (
-                            <Image
-                              className="hero-admin-thumb-image"
-                              src={primaryImage.url}
-                              alt={primaryImage.altText || product.title}
-                              width={96}
-                              height={72}
-                            />
-                          ) : null}
-                        </div>
+                        <ProductAdminThumb image={primaryImage} title={product.title} />
                       </td>
                       <td>
                         <strong>{product.title}</strong>
@@ -316,6 +370,72 @@ export default function ProductManagementPanel() {
                 })}
               </tbody>
             </table>
+          </div>
+
+          <div className="product-admin-card-list">
+            {products.map((product) => {
+              const primaryImage = getPrimaryImage(product);
+              const hasVariants = (product.variants?.length ?? 0) > 0;
+
+              return (
+                <article key={`mobile-${product._id}`} className="product-admin-card">
+                  <div className="product-admin-card-top">
+                    <ProductAdminThumb image={primaryImage} title={product.title} />
+                    <div className="product-admin-card-header-info">
+                      <div className="product-admin-card-badge-row">
+                        <span className={`hero-status-badge product-status-${product.status.toLowerCase()}`}>
+                          {product.status.replaceAll("_", " ")}
+                        </span>
+                        {product.isFeatured && (
+                          <span className="product-admin-featured-pill">Best Seller</span>
+                        )}
+                      </div>
+                      <strong className="product-admin-card-title">{product.title}</strong>
+                      <span className="product-admin-card-slug">{product.slug}</span>
+                    </div>
+                  </div>
+
+                  <div className="product-admin-card-meta-grid">
+                    <div className="product-admin-card-meta-item">
+                      <span className="product-admin-meta-label">Category</span>
+                      <span className="product-admin-meta-value">
+                        {categoriesById.get(product.categoryId) ?? "Unknown"}
+                      </span>
+                    </div>
+                    <div className="product-admin-card-meta-item">
+                      <span className="product-admin-meta-label">Price</span>
+                      <strong className="product-admin-meta-value">
+                        {formatMoney(product.basePrice)}
+                      </strong>
+                    </div>
+                    <div className="product-admin-card-meta-item">
+                      <span className="product-admin-meta-label">Stock</span>
+                      <span className="product-admin-meta-value">
+                        {product.availability === "IN_STOCK" ? "In stock" : "Out of stock"} ({hasVariants ? `${product.variants?.length ?? 0} variants` : `${product.stock ?? 0} units`})
+                      </span>
+                    </div>
+                    <div className="product-admin-card-meta-item">
+                      <span className="product-admin-meta-label">Updated</span>
+                      <span className="product-admin-meta-value">{formatDate(product.updatedAt)}</span>
+                    </div>
+                  </div>
+
+                  <div className="product-admin-card-actions">
+                    <Link className="product-admin-action-link" href={`/admin/products/${product._id}/edit`}>
+                      Edit
+                    </Link>
+                    <button
+                      className="hero-manager-delete"
+                      type="button"
+                      disabled={archiveMutation.isPending || product.status === "ARCHIVED"}
+                      onClick={() => handleArchive(product)}
+                    >
+                      Archive
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
           </div>
 
           <div className="hero-product-pagination">

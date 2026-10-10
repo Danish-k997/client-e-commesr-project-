@@ -3,6 +3,9 @@ import ProofBanner from "./_components/ProofBanner";
 import BestSellerSection from "./_components/BestSellerSection";
 import ShopByCategorySection from "./_components/ShopByCategorySection";
 import CustomRequestSection from "./_components/CustomRequestSection";
+import CustomizableProductsSection from "./_components/CustomizableProductsSection";
+import MembershipPromotionSection from "./_components/MembershipPromotionSection";
+import CompactFinalCta from "./_components/CompactFinalCta";
 
 export default function HomePage() {
   return (
@@ -12,6 +15,9 @@ export default function HomePage() {
       <BestSellerSection />
       <ShopByCategorySection />
       <CustomRequestSection />
+      <CustomizableProductsSection />
+      <MembershipPromotionSection />
+      <CompactFinalCta />
     </>
   );
 }

@@ -5,6 +5,7 @@ import type { CartCustomizationEntry } from "../cart";
 import type { CustomizationFieldValue } from "../customization";
 import { apiRequest } from "./client";
 import { ApiClientError } from "./errors";
+import type { DeliveryType } from "./products";
 import type { ApiSuccessResponse } from "./types";
 
 export type CartAvailability = "AVAILABLE" | "OUT_OF_STOCK" | "UNAVAILABLE";
@@ -13,6 +14,8 @@ export type CartProduct = {
   title: string;
   slug: string;
   image: string | null;
+  deliveryType?: DeliveryType;
+  deliveryFee?: number;
 };
 
 export type CartVariant = {
@@ -39,6 +42,7 @@ export type Cart = {
   _id: string | null;
   userId: string;
   items: CartItem[];
+  deliveryTotal?: number;
   updatedAt: string | null;
 };
 
@@ -66,6 +70,24 @@ export function getCartItemCount(cart: Cart) {
 
 export function getCartSubtotal(cart: Cart) {
   return cart.items.reduce((total, item) => total + (item.price ?? 0) * item.quantity, 0);
+}
+
+export function getCartDeliveryTotal(cart: Cart): number {
+  if (typeof cart.deliveryTotal === "number" && Number.isFinite(cart.deliveryTotal) && cart.deliveryTotal >= 0) {
+    return cart.deliveryTotal;
+  }
+
+  return cart.items.reduce((total, item) => {
+    if (
+      item.product?.deliveryType === "PAID" &&
+      typeof item.product.deliveryFee === "number" &&
+      Number.isFinite(item.product.deliveryFee) &&
+      item.product.deliveryFee > 0
+    ) {
+      return total + item.product.deliveryFee;
+    }
+    return total;
+  }, 0);
 }
 
 export async function getCart(signal?: AbortSignal) {

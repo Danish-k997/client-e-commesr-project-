@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import {
@@ -18,6 +19,7 @@ import {
   type CustomRequestStatus,
 } from "../../lib/customRequests";
 import { useQueryClient } from "@tanstack/react-query";
+import styles from "./CustomRequestAdmin.module.css";
 
 const STATUS_OPTIONS: Array<CustomRequestStatus | "ALL"> = ["ALL", ...CUSTOM_REQUEST_STATUSES];
 
@@ -63,8 +65,15 @@ function getErrorMessage(error: unknown, fallback = "Something went wrong.") {
 }
 
 export default function CustomRequestsPanel() {
+  const searchParams = useSearchParams();
+  const statusParam = searchParams.get("status");
+  const initialStatus: CustomRequestsListParams["status"] =
+    statusParam && STATUS_OPTIONS.includes(statusParam as CustomRequestStatus)
+      ? (statusParam as CustomRequestStatus)
+      : "ALL";
+
   const [page, setPage] = useState(1);
-  const [status, setStatus] = useState<CustomRequestsListParams["status"]>("ALL");
+  const [status, setStatus] = useState<CustomRequestsListParams["status"]>(initialStatus);
   const [error, setError] = useState("");
 
   const params: CustomRequestsListParams = { page, status, limit: 12 };
@@ -95,7 +104,7 @@ export default function CustomRequestsPanel() {
   }
 
   return (
-    <section className="admin-custom-requests-page">
+    <section className={`${styles.panel} admin-custom-requests-page`}>
       <header className="admin-custom-requests-header">
         <div>
           <span className="eyebrow">CUSTOM REQUESTS</span>
@@ -126,20 +135,21 @@ export default function CustomRequestsPanel() {
 
       {error && <div className="hero-admin-state error">{error}</div>}
 
-      {requestsQuery.isLoading ? (
-        <div className="hero-admin-state">Loading custom requests...</div>
-      ) : requestsQuery.isError ? (
-        <div className="hero-admin-state error">
-          <p>{getErrorMessage(requestsQuery.error, "Could not load custom requests.")}</p>
-          <button className="secondary-btn" type="button" onClick={() => requestsQuery.refetch()}>
-            Retry
-          </button>
-        </div>
-      ) : requests.length === 0 ? (
-        <div className="hero-admin-state">No custom requests found.</div>
-      ) : (
-        <div className="admin-custom-requests-table-wrap">
-          <table className="admin-custom-requests-table">
+      <div className={styles.results}>
+        {requestsQuery.isLoading ? (
+          <div className="hero-admin-state">Loading custom requests...</div>
+        ) : requestsQuery.isError ? (
+          <div className="hero-admin-state error">
+            <p>{getErrorMessage(requestsQuery.error, "Could not load custom requests.")}</p>
+            <button className="secondary-btn" type="button" onClick={() => requestsQuery.refetch()}>
+              Retry
+            </button>
+          </div>
+        ) : requests.length === 0 ? (
+          <div className="hero-admin-state">No custom requests found.</div>
+        ) : (
+          <div className="admin-custom-requests-table-wrap">
+            <table className="admin-custom-requests-table">
             <thead>
               <tr>
                 <th>Customer</th>
@@ -158,8 +168,6 @@ export default function CustomRequestsPanel() {
                 <tr
                   key={request._id}
                   className={request.isRead ? "" : "cr-row-unread"}
-                  onMouseEnter={() => markAsRead(request)}
-                  onFocus={() => markAsRead(request)}
                 >
                   <td>
                     <div className="cr-row-name">{request.name}</div>
@@ -183,7 +191,11 @@ export default function CustomRequestsPanel() {
                   <td>{formatCustomRequestDate(request.createdAt)}</td>
                   <td>
                     <div className="hero-admin-actions">
-                      <Link className="product-admin-action-link" href={`/admin/custom-requests/${request._id}`}>
+                      <Link
+                        className="product-admin-action-link"
+                        href={`/admin/custom-requests/${request._id}`}
+                        onClick={() => void markAsRead(request)}
+                      >
                         View
                       </Link>
                       <a
@@ -191,17 +203,19 @@ export default function CustomRequestsPanel() {
                         href={buildCustomerWhatsAppUrl(request.whatsappNumber)}
                         target="_blank"
                         rel="noreferrer"
+                        onClick={() => void markAsRead(request)}
                       >
-                        WhatsApp पर बात करें
+                        WhatsApp
                       </a>
                     </div>
                   </td>
                 </tr>
               ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       <div className="hero-product-pagination">
         <button

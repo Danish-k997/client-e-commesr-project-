@@ -2,10 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { RefObject } from "react";
+import styles from "./AdminSidebar.module.css";
 
 type AdminSidebarProps = {
   isOpen: boolean;
   onClose: () => void;
+  closeButtonRef: RefObject<HTMLButtonElement | null>;
 };
 
 const adminNavigation = [
@@ -13,6 +16,11 @@ const adminNavigation = [
     label: "Dashboard",
     href: "/admin/dashboard",
     description: "Overview",
+  },
+  {
+    label: "Orders",
+    href: "/admin/orders",
+    description: "Customer orders & fulfillment",
   },
   {
     label: "Custom Requests",
@@ -34,28 +42,42 @@ const adminNavigation = [
     href: "/admin/categories",
     description: "Catalog taxonomy",
   },
+  {
+    label: "Memberships",
+    href: "/admin/memberships",
+    description: "₹99 Club passes",
+  },
 ];
 
-export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
+export default function AdminSidebar({ isOpen, onClose, closeButtonRef }: AdminSidebarProps) {
   const pathname = usePathname();
 
   return (
     <>
-      <button
-        className={`admin-sidebar-backdrop${isOpen ? " is-open" : ""}`}
-        type="button"
-        aria-label="Close admin navigation"
-        onClick={onClose}
-      />
-      <aside id="admin-sidebar" className={`admin-sidebar${isOpen ? " is-open" : ""}`}>
-        <div className="admin-sidebar-header">
-          <span className="admin-sidebar-title">Management</span>
-          <button className="admin-sidebar-close" type="button" aria-label="Close admin navigation" onClick={onClose}>
+      {isOpen && (
+        <button
+          className={styles.backdrop}
+          type="button"
+          aria-label="Close admin navigation"
+          tabIndex={-1}
+          onClick={onClose}
+        />
+      )}
+      <aside id="admin-sidebar" className={`${styles.sidebar}${isOpen ? ` ${styles.isOpen}` : ""}`}>
+        <div className={styles.header}>
+          <span className={styles.title}>Management</span>
+          <button
+            ref={closeButtonRef}
+            className={styles.close}
+            type="button"
+            aria-label="Close admin navigation"
+            onClick={onClose}
+          >
             ×
           </button>
         </div>
 
-        <nav className="admin-sidebar-nav" aria-label="Admin navigation">
+        <nav className={styles.nav} aria-label="Admin navigation">
           {adminNavigation.map((item) => {
             const isActive =
               pathname === item.href ||
@@ -64,7 +86,7 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
             return (
               <Link
                 key={item.href}
-                className={`admin-sidebar-link${isActive ? " is-active" : ""}`}
+                className={`${styles.link}${isActive ? ` ${styles.active}` : ""}`}
                 href={item.href}
                 aria-current={isActive ? "page" : undefined}
                 onClick={onClose}

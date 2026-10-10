@@ -1,6 +1,11 @@
 export { apiClient, apiRequest } from "./client";
 export { ApiClientError, normalizeApiError } from "./errors";
 export * from "./cart";
+export * from "./membership";
+export * from "./addresses";
+export * from "./checkout";
+export * from "./orders";
+export * from "./admin-orders";
 export * from "./customization";
 export * from "./customRequests";
 export * from "./hero";

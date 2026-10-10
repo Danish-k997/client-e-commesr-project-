@@ -1,0 +1,351 @@
+/* ==========================================================================
+   Admin Dashboard Stylesheet (CSS Module)
+   Tokens: Warm Ivory (#FAF9F5), Soft Cream (#F4F2EB), Charcoal (#18181B), Lime (#CCFF00)
+   ========================================================================== */
+
+.dashboard {
+  width: min(100% - 48px, 1440px);
+  margin: 32px auto 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid rgba(228, 226, 220, 0.85);
+}
+
+.headerText {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 720px;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-outfit), Arial, sans-serif;
+  font-size: clamp(2rem, 4vw, 2.85rem);
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 1.1;
+  color: var(--text);
+}
+
+.description {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.96rem;
+  line-height: 1.5;
+}
+
+/* ==========================================================================
+   Quick Actions Bar
+   ========================================================================== */
+
+.actionLauncher {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px 20px;
+  background: var(--surface);
+  border: 1px solid rgba(228, 226, 220, 0.9);
+  border-radius: 16px;
+}
+
+.launcherLabel {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-right: 4px;
+}
+
+.btnPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 18px;
+  border-radius: 10px;
+  background: var(--lime);
+  color: #111827;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  transition: transform 140ms ease, box-shadow 140ms ease;
+  box-shadow: 0 4px 14px -4px rgba(204, 255, 0, 0.4);
+}
+
+.btnPrimary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px -4px rgba(204, 255, 0, 0.6);
+}
+
+.btnSecondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(228, 226, 220, 0.9);
+  background: #ffffff;
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 750;
+  text-decoration: none;
+  transition: all 140ms ease;
+}
+
+.btnSecondary:hover {
+  border-color: rgba(24, 24, 27, 0.35);
+  background: var(--surface);
+}
+
+/* ==========================================================================
+   Sections & Metric Grids
+   ========================================================================== */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.sectionLink {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 140ms ease;
+}
+
+.sectionLink:hover {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 16px;
+}
+
+.metricCard {
+  background: var(--surface);
+  border: 1px solid rgba(228, 226, 220, 0.9);
+  border-radius: 18px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+  box-shadow: 0 8px 24px -16px rgba(24, 24, 27, 0.08);
+}
+
+.metricCard:hover {
+  transform: translateY(-2px);
+  border-color: rgba(24, 24, 27, 0.25);
+  box-shadow: 0 12px 28px -14px rgba(24, 24, 27, 0.14);
+}
+
+.metricLabel {
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.metricValue {
+  font-family: var(--font-outfit), Arial, sans-serif;
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  color: var(--text);
+}
+
+.metricDetail {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.metricAlertBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  width: fit-content;
+}
+
+.metricCardAccent {
+  border-color: rgba(204, 255, 0, 0.85);
+  background: linear-gradient(180deg, rgba(204, 255, 0, 0.08) 0%, var(--surface) 100%);
+}
+
+.metricCardAlert {
+  border-color: #fde68a;
+  background: linear-gradient(180deg, #fffbeb 0%, var(--surface) 100%);
+}
+
+/* ==========================================================================
+   Two-Column Activity Hub
+   ========================================================================== */
+
+.hubGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.hubCard {
+  background: var(--surface);
+  border: 1px solid rgba(228, 226, 220, 0.9);
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.hubCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.hubCardTitle {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.hubLinksList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hubLinkItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid rgba(228, 226, 220, 0.7);
+  text-decoration: none;
+  color: var(--text);
+  font-size: 0.86rem;
+  font-weight: 700;
+  transition: all 140ms ease;
+}
+
+.hubLinkItem:hover {
+  background: rgba(204, 255, 0, 0.15);
+  border-color: rgba(204, 255, 0, 0.7);
+  transform: translateX(3px);
+}
+
+.hubLinkItem span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hubLinkArrow {
+  color: var(--text-muted);
+  font-weight: 800;
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+@media (max-width: 900px) {
+  .hubGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard {
+    width: min(100% - 24px, 1440px);
+    margin: 20px auto 48px;
+    gap: 28px;
+  }
+
+  .actionLauncher {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btnPrimary,
+  .btnSecondary {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .metricGrid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -26,6 +26,7 @@ export async function apiRequest<TResponse, TBody = unknown>(
   const config: AxiosRequestConfig<TBody> = {
     method,
     url,
+    headers: options.headers,
     params: options.params,
     data: options.body,
     signal: options.signal,

@@ -1,14 +1,18 @@
 "use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { FormEvent, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, Suspense, useRef, useState } from "react";
 import { createAuthClient } from "better-auth/react";
 
 const authClient = createAuthClient();
 
-export default function SignupPage() {
+function SignupContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawRedirect = searchParams.get("redirect");
+
   const submitting = useRef(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -93,6 +97,16 @@ export default function SignupPage() {
 
         <section className="auth-panel">
           <div className="auth-card">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-muted hover:text-brand-charcoal transition-colors mb-3"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              <span>Return to Store</span>
+            </Link>
+
             <p className="eyebrow panel-eyebrow">Create account</p>
             <h2 className="auth-heading">Design your next build.</h2>
             <p className="auth-description">
@@ -102,24 +116,21 @@ export default function SignupPage() {
 
             <form className="auth-form" onSubmit={handleSignup}>
               <div className="form-field">
-                <label htmlFor="name">Name</label>
+                <label htmlFor="name">Full Name</label>
                 <input
                   id="name"
- 
- 
                   type="text"
                   value={name}
                   onChange={(event) => setName(event.target.value)}
                   placeholder="Your full name"
                   required
-                  minLength={2}
                 />
               </div>
 
               <div className="form-field">
-                <label htmlFor="signup-email">Email</label>
+                <label htmlFor="email">Email</label>
                 <input
-                  id="signup-email"
+                  id="email"
                   type="email"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
@@ -129,23 +140,15 @@ export default function SignupPage() {
               </div>
 
               <div className="form-field">
-                <label htmlFor="signup-password">Password</label>
+                <label htmlFor="password">Password</label>
                 <input
-                  id="signup-password"
+                  id="password"
                   type="password"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
-                  placeholder="At least 8 characters"
+                  placeholder="Create a strong password"
                   required
-                  minLength={8}
                 />
-              </div>
-
-              <div className="form-row">
-                <label className="checkbox-wrap">
-                  <input type="checkbox" required />
-                  <span>I agree to the studio terms.</span>
-                </label>
               </div>
 
               <button type="submit" className="primary-btn" disabled={loading}>
@@ -156,11 +159,22 @@ export default function SignupPage() {
             {error && <div className="form-message error">{error}</div>}
 
             <p className="auth-footer">
-              Already part of the studio? <Link href="/login">Sign in</Link>
+              Already have an account?{" "}
+              <Link href={rawRedirect ? `/login?redirect=${encodeURIComponent(rawRedirect)}` : "/login"}>
+                Sign in
+              </Link>
             </p>
           </div>
         </section>
       </div>
     </main>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<div className="auth-shell" />}>
+      <SignupContent />
+    </Suspense>
   );
 }

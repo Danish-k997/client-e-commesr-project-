@@ -2,6 +2,10 @@ import mongoose, { type Model, type Types } from "mongoose";
 
 export type ProductStatus = "DRAFT" | "ACTIVE" | "OUT_OF_STOCK" | "ARCHIVED";
 
+export const DELIVERY_TYPES = ["FREE", "PAID"] as const;
+
+export type DeliveryType = (typeof DELIVERY_TYPES)[number];
+
 export interface IProductImage {
   url: string;
   publicId?: string;
@@ -90,6 +94,8 @@ export interface IProduct {
   variationDefinitions: IProductVariationDefinition[];
   specifications: IProductSpecification[];
   customization: IProductCustomization;
+  deliveryType: DeliveryType;
+  deliveryFee: number;
   status: ProductStatus;
   isFeatured: boolean;
   seoTitle?: string;
@@ -541,6 +547,25 @@ const ProductSchema = new mongoose.Schema<IProduct>(
       type: CustomizationSchema,
       default: () => ({ enabled: false, fields: [] }),
     },
+    deliveryType: {
+      type: String,
+      enum: {
+        values: DELIVERY_TYPES,
+        message: "deliveryType must be either FREE or PAID.",
+      },
+      default: "FREE",
+    },
+    deliveryFee: {
+      type: Number,
+      default: 0,
+      min: [0, "deliveryFee must never be negative."],
+      validate: {
+        validator(value: number) {
+          return typeof value === "number" && !Number.isNaN(value) && Number.isFinite(value) && value >= 0;
+        },
+        message: "deliveryFee must be a non-negative number.",
+      },
+    },
     status: {
       type: String,
       enum: ["DRAFT", "ACTIVE", "OUT_OF_STOCK", "ARCHIVED"],
@@ -577,10 +602,44 @@ ProductSchema.path("compareAtPrice").validate(function (value: number | null) {
   return value >= (this as mongoose.Document & IProduct).get("basePrice");
 }, "compareAtPrice must be greater than or equal to basePrice.");
 
+ProductSchema.path("deliveryFee").validate(function (value: number) {
+  if (typeof value !== "number" || Number.isNaN(value) || value < 0) {
+    return false;
+  }
+
+  const doc = this as (mongoose.Document & IProduct) | mongoose.Query<unknown, unknown>;
+  let deliveryType: string | undefined;
+
+  if (typeof doc.get === "function") {
+    deliveryType = doc.get("deliveryType");
+  }
+
+  if (!deliveryType && "getUpdate" in doc && typeof doc.getUpdate === "function") {
+    const update = doc.getUpdate() as Record<string, unknown> | null;
+    if (update) {
+      const setObj = update.$set as Record<string, unknown> | undefined;
+      deliveryType = (setObj?.deliveryType ?? update.deliveryType) as string | undefined;
+    }
+  }
+
+  const effectiveDeliveryType = deliveryType ?? "FREE";
+
+  if (effectiveDeliveryType === "FREE") {
+    return value === 0;
+  }
+
+  if (effectiveDeliveryType === "PAID") {
+    return value > 0;
+  }
+
+  return true;
+}, "deliveryFee must be 0 for FREE delivery and greater than 0 for PAID delivery.");
+
 ProductSchema.index({ categoryId: 1, status: 1 });
 ProductSchema.index({ status: 1, isFeatured: 1 });
 ProductSchema.index({ status: 1, createdAt: -1 });
 ProductSchema.index({ subcategoryId: 1, status: 1 });
+ProductSchema.index({ "customization.enabled": 1, status: 1 });
 
 const Product: Model<IProduct> =
   mongoose.models.Product || mongoose.model<IProduct>("Product", ProductSchema);

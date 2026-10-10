@@ -1,0 +1,335 @@
+.success-page {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+}
+
+.success-card {
+  max-width: 680px;
+  width: 100%;
+  background: var(--surface, #111);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+  border-radius: 1.25rem;
+  padding: 2.5rem 2rem;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.success-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 4.5rem;
+  height: 4.5rem;
+  background: rgba(34, 197, 94, 0.15);
+  border: 2px solid rgba(34, 197, 94, 0.5);
+  border-radius: 50%;
+  margin-bottom: 1.25rem;
+}
+
+.syncing-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 4.5rem;
+  height: 4.5rem;
+  background: rgba(234, 179, 8, 0.15);
+  border: 2px solid rgba(234, 179, 8, 0.5);
+  border-radius: 50%;
+  margin-bottom: 1.25rem;
+  animation: pulse 1.8s infinite ease-in-out;
+}
+
+.failed-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 4.5rem;
+  height: 4.5rem;
+  background: rgba(239, 68, 68, 0.15);
+  border: 2px solid rgba(239, 68, 68, 0.5);
+  border-radius: 50%;
+  margin-bottom: 1.25rem;
+}
+
+.success-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  color: #22c55e;
+}
+
+.syncing-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  color: #eab308;
+  animation: spin 2s linear infinite;
+}
+
+.failed-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  color: #ef4444;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.85;
+  }
+}
+
+.success-card h1 {
+  font-size: 1.85rem;
+  font-weight: 700;
+  margin: 0.35rem 0 0.75rem;
+  color: #fff;
+}
+
+.success-lead {
+  color: #a1a1aa;
+  font-size: 0.98rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.order-badge {
+  display: inline-flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.order-badge span {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #71717a;
+  margin-bottom: 0.2rem;
+}
+
+.order-badge strong {
+  font-family: monospace;
+  font-size: 1.25rem;
+  color: #ccff00;
+  letter-spacing: 0.04em;
+}
+
+.status-tag {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  margin-top: 0.5rem;
+}
+
+.status-paid {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.status-syncing {
+  background: rgba(234, 179, 8, 0.15);
+  color: #eab308;
+  border: 1px solid rgba(234, 179, 8, 0.3);
+}
+
+.status-failed {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Sections */
+.order-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin: 1.5rem 0 2rem;
+  text-align: left;
+}
+
+.section-box {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.75rem;
+  padding: 1.2rem;
+}
+
+.section-box h3 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #e4e4e7;
+  margin: 0 0 0.75rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 0.5rem;
+}
+
+.address-text {
+  font-size: 0.88rem;
+  color: #d4d4d8;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.address-text strong {
+  display: block;
+  color: #ffffff;
+  margin-bottom: 0.2rem;
+}
+
+.items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.88rem;
+  color: #d4d4d8;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.06);
+}
+
+.item-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.item-title {
+  font-weight: 600;
+  color: #f4f4f5;
+}
+
+.item-meta {
+  font-size: 0.78rem;
+  color: #a1a1aa;
+}
+
+.item-amount {
+  font-weight: 600;
+  color: #f4f4f5;
+  white-space: nowrap;
+}
+
+.financial-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: #a1a1aa;
+}
+
+.financial-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.financial-total {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ffffff;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 0.25rem;
+}
+
+.total-amount {
+  color: #ccff00;
+  font-size: 1.15rem;
+}
+
+.success-actions {
+  display: flex;
+  gap: 0.85rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.continue-shopping-btn {
+  background: #ccff00;
+  color: #000;
+  font-weight: 700;
+  padding: 0.8rem 1.6rem;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  font-size: 0.92rem;
+  transition: opacity 0.2s;
+}
+
+.continue-shopping-btn:hover {
+  opacity: 0.9;
+}
+
+.view-orders-btn {
+  background: transparent;
+  color: #e4e4e7;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-weight: 600;
+  padding: 0.8rem 1.6rem;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  font-size: 0.92rem;
+  transition: all 0.2s;
+}
+
+.view-orders-btn:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #fff;
+}
+
+.refresh-status-btn {
+  background: rgba(234, 179, 8, 0.15);
+  color: #eab308;
+  border: 1px solid rgba(234, 179, 8, 0.4);
+  font-weight: 600;
+  padding: 0.8rem 1.6rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.92rem;
+  transition: background 0.2s;
+}
+
+.refresh-status-btn:hover {
+  background: rgba(234, 179, 8, 0.25);
+}
+
+.success-loading {
+  text-align: center;
+  color: #a1a1aa;
+  padding: 3rem;
+}

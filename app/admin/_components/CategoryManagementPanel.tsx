@@ -404,7 +404,13 @@ export default function CategoryManagementPanel() {
                   >
                     <span className="category-admin-image">
                       {category.image ? (
-                        <Image src={category.image} alt={category.name} width={64} height={64} />
+                        <Image
+                          src={category.image}
+                          alt={category.name}
+                          width={64}
+                          height={64}
+                          unoptimized={category.image.startsWith("data:")}
+                        />
                       ) : (
                         category.name.slice(0, 1).toUpperCase()
                       )}

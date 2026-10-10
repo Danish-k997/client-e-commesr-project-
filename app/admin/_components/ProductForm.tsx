@@ -6,6 +6,7 @@ import { useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 
 import {
   ApiClientError,
+  type DeliveryType,
   type ProductImagePayload,
   type ProductPayload,
   type ProductRecord,
@@ -106,6 +107,14 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
   const [basePrice, setBasePrice] = useState(toRupeeInput(product?.basePrice));
   const [compareAtPrice, setCompareAtPrice] = useState(toRupeeInput(product?.compareAtPrice));
   const [stock, setStock] = useState(String(product?.stock ?? 0));
+  const [deliveryType, setDeliveryType] = useState<DeliveryType>(
+    product?.deliveryType === "PAID" ? "PAID" : "FREE"
+  );
+  const [deliveryFee, setDeliveryFee] = useState<string>(
+    product?.deliveryType === "PAID" && typeof product.deliveryFee === "number" && product.deliveryFee > 0
+      ? String(product.deliveryFee)
+      : "0"
+  );
   const [status, setStatus] = useState<ProductStatus>(product?.status ?? "DRAFT");
   const [isFeatured, setIsFeatured] = useState(product?.isFeatured ?? false);
   const [seoTitle, setSeoTitle] = useState(product?.seoTitle ?? "");
@@ -353,6 +362,22 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
       return "Product stock must be a non-negative whole number.";
     }
 
+    if (deliveryType === "PAID") {
+      if (!deliveryFee.trim()) {
+        return "Delivery fee is required for paid delivery.";
+      }
+
+      const parsedDeliveryFee = Number(deliveryFee);
+
+      if (Number.isNaN(parsedDeliveryFee) || !Number.isFinite(parsedDeliveryFee)) {
+        return "Delivery fee must be a valid number.";
+      }
+
+      if (parsedDeliveryFee <= 0) {
+        return "Delivery fee must be greater than 0.";
+      }
+    }
+
     const usableImages = images.filter((image) => image.url || image.imageDataUrl);
 
     if (usableImages.length < 1 || usableImages.length > 8) {
@@ -420,6 +445,7 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
 
   function buildPayload(): ProductPayload {
     const parsedCompareAtPrice = toMinorUnits(compareAtPrice);
+    const resolvedDeliveryFee = deliveryType === "PAID" ? Number(deliveryFee) : 0;
 
     return {
       title: title.trim(),
@@ -431,6 +457,8 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
       basePrice: toMinorUnits(basePrice) ?? 0,
       compareAtPrice: parsedCompareAtPrice,
       stock: Number(stock),
+      deliveryType,
+      deliveryFee: resolvedDeliveryFee,
       images: images
         .filter((image) => image.url || image.imageDataUrl)
         .map((image) => ({
@@ -605,6 +633,85 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
       </section>
 
       <section className="product-form-section">
+        <h2>Delivery</h2>
+        <div className="form-field">
+          <label>Delivery type</label>
+          <div
+            role="radiogroup"
+            aria-label="Delivery type"
+            style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}
+          >
+            <button
+              type="button"
+              role="radio"
+              aria-checked={deliveryType === "FREE"}
+              className={deliveryType === "FREE" ? "primary-btn" : "secondary-btn"}
+              style={{
+                width: "auto",
+                minHeight: "44px",
+                padding: "0 22px",
+                fontSize: "0.82rem",
+                fontWeight: 700,
+                letterSpacing: "normal",
+                textTransform: "none",
+              }}
+              onClick={() => {
+                setDeliveryType("FREE");
+                setDeliveryFee("0");
+              }}
+            >
+              Free Delivery
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={deliveryType === "PAID"}
+              className={deliveryType === "PAID" ? "primary-btn" : "secondary-btn"}
+              style={{
+                width: "auto",
+                minHeight: "44px",
+                padding: "0 22px",
+                fontSize: "0.82rem",
+                fontWeight: 700,
+                letterSpacing: "normal",
+                textTransform: "none",
+              }}
+              onClick={() => {
+                setDeliveryType("PAID");
+                if (deliveryFee === "0") {
+                  setDeliveryFee("");
+                }
+              }}
+            >
+              Paid Delivery
+            </button>
+          </div>
+        </div>
+
+        {deliveryType === "FREE" ? (
+          <p style={{ margin: 0, fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
+            Customer will not be charged for delivery.
+          </p>
+        ) : (
+          <div className="form-row-grid">
+            <div className="form-field">
+              <label htmlFor="product-delivery-fee">Delivery fee (₹)</label>
+              <input
+                id="product-delivery-fee"
+                type="number"
+                min="0.01"
+                step="0.01"
+                placeholder="50"
+                value={deliveryFee}
+                onChange={(event) => setDeliveryFee(event.target.value)}
+                required
+              />
+            </div>
+          </div>
+        )}
+      </section>
+
+      <section className="product-form-section">
         <div className="product-form-section-heading">
           <h2>Images</h2>
           <button
@@ -620,7 +727,14 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
           {images.map((image, index) => (
             <article className="product-image-editor" key={image.key}>
               {image.url ? (
-                <Image className="product-image-preview" src={image.url} alt={image.altText || "Product preview"} width={180} height={135} />
+                <Image
+                  className="product-image-preview"
+                  src={image.url}
+                  alt={image.altText || "Product preview"}
+                  width={180}
+                  height={135}
+                  unoptimized={image.url.startsWith("data:")}
+                />
               ) : (
                 <div className="product-image-placeholder">Image preview</div>
               )}

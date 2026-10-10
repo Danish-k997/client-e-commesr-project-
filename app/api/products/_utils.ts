@@ -1,8 +1,9 @@
 import mongoose, { type QueryFilter } from "mongoose";
 
 import { cloudinary } from "../../lib/cloudinary";
-import { Category, Product, ProductVariant, Subcategory } from "../../models";
+import { Category, DELIVERY_TYPES, Product, ProductVariant, Subcategory } from "../../models";
 import type {
+  DeliveryType,
   IProduct,
   IProductCustomization,
   IProductImage,
@@ -28,6 +29,8 @@ export const PRODUCT_FIELDS = [
   "variationDefinitions",
   "specifications",
   "customization",
+  "deliveryType",
+  "deliveryFee",
   "status",
   "isFeatured",
   "seoTitle",
@@ -54,6 +57,8 @@ type ProductPayload = {
   variationDefinitions: IProductVariationDefinition[];
   specifications: IProductSpecification[];
   customization: IProductCustomization;
+  deliveryType: DeliveryType;
+  deliveryFee: number;
   status: ProductStatus;
   isFeatured: boolean;
   seoTitle?: string;
@@ -143,6 +148,12 @@ export function parseListQuery(searchParams: URLSearchParams, options: { admin?:
     filter.subcategoryId = requireObjectId(subcategoryId, "subcategoryId");
   }
 
+  const excludeProductId = searchParams.get("excludeProductId");
+
+  if (excludeProductId) {
+    filter._id = { $ne: new mongoose.Types.ObjectId(requireObjectId(excludeProductId, "excludeProductId")) };
+  }
+
   const isFeatured = searchParams.get("isFeatured");
 
   if (isFeatured !== null && isFeatured !== "true" && isFeatured !== "false") {
@@ -151,6 +162,16 @@ export function parseListQuery(searchParams: URLSearchParams, options: { admin?:
 
   if (isFeatured !== null) {
     filter.isFeatured = isFeatured === "true";
+  }
+
+  const customizable = searchParams.get("customizable");
+
+  if (customizable !== null && customizable !== "true" && customizable !== "false") {
+    throw new ApiError(400, "customizable must be true or false.");
+  }
+
+  if (customizable === "true") {
+    (filter as Record<string, unknown>)["customization.enabled"] = true;
   }
 
   return {
@@ -227,6 +248,23 @@ export async function buildProductPayload(
       ? existingProduct?.customization ?? { enabled: false, fields: [] }
       : parseCustomization(payload.customization);
 
+  const rawDeliveryType = readDeliveryType(payload.deliveryType);
+  const rawDeliveryFee = readDeliveryFee(payload.deliveryFee, false);
+
+  const deliveryType: DeliveryType =
+    rawDeliveryType ?? existingProduct?.deliveryType ?? "FREE";
+
+  let deliveryFee: number;
+  if (deliveryType === "FREE") {
+    deliveryFee = 0;
+  } else {
+    const candidateFee = rawDeliveryFee ?? existingProduct?.deliveryFee;
+    if (candidateFee === undefined || candidateFee <= 0) {
+      throw new ApiError(400, "deliveryFee must be greater than 0 for PAID delivery.");
+    }
+    deliveryFee = candidateFee;
+  }
+
   const productPayload: Partial<ProductPayload> = {};
 
   assignString(productPayload, payload, "title", !existingProduct);
@@ -248,6 +286,8 @@ export async function buildProductPayload(
   productPayload.variationDefinitions = variationDefinitions;
   productPayload.specifications = specifications;
   productPayload.customization = customization;
+  productPayload.deliveryType = deliveryType;
+  productPayload.deliveryFee = deliveryFee;
   productPayload.status = readStatus(payload.status) ?? existingProduct?.status ?? "DRAFT";
   productPayload.isFeatured = productPayload.isFeatured ?? existingProduct?.isFeatured ?? false;
 
@@ -422,8 +462,11 @@ export function serializeCustomerProduct(product: ProductRead, variants: Variant
     images: product.images,
     basePrice: product.basePrice,
     compareAtPrice: product.compareAtPrice,
+    deliveryType: product.deliveryType ?? "FREE",
+    deliveryFee: typeof product.deliveryFee === "number" ? product.deliveryFee : 0,
     variationDefinitions: product.variationDefinitions,
     specifications: product.specifications,
+    customizable: Boolean(product.customization?.enabled),
     customization: normalizeStoredCustomization(product.customization),
     status: product.status,
     isFeatured: product.isFeatured,
@@ -448,6 +491,9 @@ export function serializeCustomerProduct(product: ProductRead, variants: Variant
 export function serializeAdminProduct(product: ProductRead, variants: VariantRead[]) {
   return serializeDocument({
     ...product,
+    deliveryType: product.deliveryType ?? "FREE",
+    deliveryFee: typeof product.deliveryFee === "number" ? product.deliveryFee : 0,
+    customizable: Boolean(product.customization?.enabled),
     customization: normalizeStoredCustomization(product.customization),
     availability: getAvailability(product, variants.filter((variant) => variant.isActive)),
     variants,
@@ -753,6 +799,38 @@ function readStatus(value: unknown) {
   }
 
   return value as ProductStatus;
+}
+
+function readDeliveryType(value: unknown): DeliveryType | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value !== "string" || !DELIVERY_TYPES.includes(value as DeliveryType)) {
+    throw new ApiError(400, `deliveryType must be one of ${DELIVERY_TYPES.join(", ")}.`);
+  }
+
+  return value as DeliveryType;
+}
+
+function readDeliveryFee(value: unknown, required: boolean): number | undefined {
+  if (value === undefined) {
+    if (required) {
+      throw new ApiError(400, "deliveryFee is required.");
+    }
+
+    return undefined;
+  }
+
+  if (typeof value !== "number" || Number.isNaN(value) || !Number.isFinite(value)) {
+    throw new ApiError(400, "deliveryFee must be a number.");
+  }
+
+  if (value < 0) {
+    throw new ApiError(400, "deliveryFee must be a non-negative number.");
+  }
+
+  return value;
 }
 
 function assignString(

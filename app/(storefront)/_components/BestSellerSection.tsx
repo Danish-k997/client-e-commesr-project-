@@ -1,10 +1,7 @@
 "use client";
 
-import styles from "./BestSellerSection.module.css";
-import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { A11y, Autoplay, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import type { Swiper as SwiperInstance } from "swiper/types";
@@ -14,359 +11,17 @@ import "swiper/css/autoplay";
 import "swiper/css/navigation";
 import "swiper/css/a11y";
 
-import {
-  ApiClientError,
-  useCustomerProducts,
-  type ProductRecord,
-} from "../../lib/api";
-import { useAddCartItem } from "../../lib/api/cart";
+import { useCustomerProducts } from "../../lib/api";
+import ProductCard from "./ProductCard";
 
-const AUTOPLAY_DELAY = 3800;
+const AUTOPLAY_DELAY = 4500;
 const BEST_SELLER_LIMIT = 10;
 
-const BEST_SELLER_BASE_VIEWS = 1.2;
-const BEST_SELLER_BASE_GAP = 16;
-
-const BEST_SELLER_BREAKPOINTS = {
-  768: { slidesPerView: 2.4, spaceBetween: 16 },
-  981: { slidesPerView: 3.4, spaceBetween: 20 },
-  1280: { slidesPerView: 4.5, spaceBetween: 20 },
-} as const;
-
-type BestSellerBreakpoint = keyof typeof BEST_SELLER_BREAKPOINTS;
-
-function computeVisibleSlides(width: number) {
-  let visible = BEST_SELLER_BASE_VIEWS;
-
-  (Object.keys(BEST_SELLER_BREAKPOINTS) as unknown as BestSellerBreakpoint[])
-    .map(Number)
-    .sort((a, b) => a - b)
-    .forEach((breakpoint) => {
-      if (width >= breakpoint) {
-        visible = BEST_SELLER_BREAKPOINTS[breakpoint as BestSellerBreakpoint].slidesPerView;
-      }
-    });
-
-  return visible;
-}
-
-function useVisibleSlides() {
-  const [visibleSlides, setVisibleSlides] = useState(() =>
-    typeof window === "undefined" ? BEST_SELLER_BASE_VIEWS : computeVisibleSlides(window.innerWidth)
-  );
-
-  useEffect(() => {
-    const mediaQueries = (Object.keys(BEST_SELLER_BREAKPOINTS) as unknown as BestSellerBreakpoint[])
-      .map(Number)
-      .map((breakpoint) => window.matchMedia(`(min-width: ${breakpoint}px)`));
-
-    const sync = () => setVisibleSlides(computeVisibleSlides(window.innerWidth));
-
-    mediaQueries.forEach((mediaQuery) => mediaQuery.addEventListener("change", sync));
-    return () => mediaQueries.forEach((mediaQuery) => mediaQuery.removeEventListener("change", sync));
-  }, []);
-
-  return visibleSlides;
-}
-
-function usePrefersReducedMotion() {
-  const [reduced, setReduced] = useState(false);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const onChange = () => setReduced(mediaQuery.matches);
-
-    onChange();
-    mediaQuery.addEventListener("change", onChange);
-    return () => mediaQuery.removeEventListener("change", onChange);
-  }, []);
-
-  return reduced;
-}
-
-function formatPrice(value: number) {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 2,
-  }).format(value / 100);
-}
-
-function getPrimaryImage(product: ProductRecord) {
-  return product.images.find((image) => image.isPrimary && image.url) ?? product.images.find((image) => image.url);
-}
-
-function canAddDirectly(product: ProductRecord) {
-  return !product.hasVariants && !product.customization?.enabled;
-}
-
-type BestSellerHeaderProps = {
-  showControls: boolean;
-  prevButtonRef?: React.RefObject<HTMLButtonElement | null>;
-  nextButtonRef?: React.RefObject<HTMLButtonElement | null>;
-};
-
-function BestSellerHeader({ showControls, prevButtonRef, nextButtonRef }: BestSellerHeaderProps) {
-  return (
-    <div className={styles["best-seller-header"]}>
-      <div>
-        <p className="eyebrow">Curated by the studio</p>
-        <h2 className={styles["best-seller-title"]}>Best sellers</h2>
-        <p className={styles["best-seller-subtitle"]}>
-          Handpicked pieces from the KASAR DIMENSIONS collection.
-        </p>
-      </div>
-      <div className={styles["best-seller-controls"]} hidden={!showControls}>
-        <button
-          type="button"
-          ref={prevButtonRef}
-          className={styles["best-seller-arrow"]}
-          aria-label="Previous best sellers"
-        >
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M15 18l-6-6 6-6" />
-          </svg>
-        </button>
-        <button
-          type="button"
-          ref={nextButtonRef}
-          className={styles["best-seller-arrow"]}
-          aria-label="Next best sellers"
-        >
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M9 6l6 6-6 6" />
-          </svg>
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function BestSellerCard({ product }: { product: ProductRecord }) {
-  const router = useRouter();
-  const addMutation = useAddCartItem();
-  const [justAdded, setJustAdded] = useState(false);
-  const [addError, setAddError] = useState("");
-  const feedbackTimer = useRef<number | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (feedbackTimer.current !== null) {
-        window.clearTimeout(feedbackTimer.current);
-      }
-    };
-  }, []);
-
-  const image = getPrimaryImage(product);
-  const productHref = `/products/${product._id}`;
-  const outOfStock = product.availability === "OUT_OF_STOCK";
-  const supportsDirectAdd = canAddDirectly(product);
-  const isPendingThis = addMutation.isPending;
-  const showAdded = addMutation.isSuccess && justAdded && !outOfStock;
-
-  function handleAddToCart() {
-    if (isPendingThis) {
-      return;
-    }
-
-    addMutation.mutate(
-      { productId: product._id, variantId: null, quantity: 1 },
-      {
-        onSuccess: () => {
-          setAddError("");
-          setJustAdded(true);
-          if (feedbackTimer.current !== null) {
-            window.clearTimeout(feedbackTimer.current);
-          }
-          feedbackTimer.current = window.setTimeout(() => {
-            setJustAdded(false);
-            addMutation.reset();
-          }, 2400);
-        },
-        onError: (error) => {
-          if (error instanceof ApiClientError && error.statusCode === 401) {
-            router.push("/login");
-            return;
-          }
-          const message =
-            error instanceof ApiClientError ? error.message : "Couldn’t add to cart. Please try again.";
-          setAddError(message);
-          if (feedbackTimer.current !== null) {
-            window.clearTimeout(feedbackTimer.current);
-          }
-          feedbackTimer.current = window.setTimeout(() => setAddError(""), 3200);
-        },
-      }
-    );
-  }
-
-  const addLabel = showAdded ? "Added" : isPendingThis ? "Adding…" : "Add to Cart";
-
-  return (
-    <article className={styles["best-seller-card"]}>
-      <Link className={styles["best-seller-card-media"]} href={productHref}>
-        {image ? (
-          <Image
-            src={image.url}
-            alt={image.altText || product.title}
-            fill
-            sizes="(max-width: 640px) 74vw, (max-width: 980px) 40vw, 300px"
-            draggable={false}
-          />
-        ) : (
-          <span className={styles["best-seller-no-image"]}>Image unavailable</span>
-        )}
-        <span className={styles["best-seller-badge"]}>Best Seller</span>
-        <span
-          className={`${styles["best-seller-availability"]}${
-            outOfStock ? ` ${styles["is-unavailable"]}` : ""
-          }`}
-        >
-          {outOfStock ? "Out of stock" : "In stock"}
-        </span>
-      </Link>
-
-      <div className={styles["best-seller-card-body"]}>
-        <h3 className={styles["best-seller-card-title"]}>
-          <Link href={productHref}>
-            {product.title}
-          </Link>
-        </h3>
-
-        <div className={styles["best-seller-card-prices"]}>
-          <strong>{formatPrice(product.basePrice)}</strong>
-          {product.compareAtPrice !== null &&
-            product.compareAtPrice !== undefined &&
-            product.compareAtPrice > product.basePrice && (
-              <span className={styles["best-seller-compare-at"]}>{formatPrice(product.compareAtPrice)}</span>
-            )}
-        </div>
-
-        <div className={styles["best-seller-card-actions"]}>
-          {supportsDirectAdd && !outOfStock ? (
-            <button
-              type="button"
-              className={`${styles["best-seller-add-btn"]}${showAdded ? ` ${styles["is-added"]}` : ""}`}
-              disabled={isPendingThis}
-              onClick={handleAddToCart}
-            >
-              {addLabel}
-            </button>
-          ) : (
-            <Link
-              className={`${styles["best-seller-add-btn"]} ${styles["best-seller-choose-btn"]}`}
-              href={productHref}
-            >
-              {outOfStock ? "View product" : "Choose options"}
-            </Link>
-          )}
-          <Link className={styles["best-seller-view-link"]} href={productHref}>
-            View details
-          </Link>
-        </div>
-
-        {addError && <p className={styles["best-seller-add-error"]} role="alert">{addError}</p>}
-      </div>
-    </article>
-  );
-}
-
-function BestSellerCardSkeleton() {
-  return (
-    <div className={styles["best-seller-skeleton"]} aria-hidden="true">
-      <span className={styles["best-seller-skeleton-media"]} />
-      <span className={styles["best-seller-skeleton-line"]} />
-      <span className={`${styles["best-seller-skeleton-line"]} ${styles["short"]}`} />
-    </div>
-  );
-}
-
-function BestSellerShelf({ products }: { products: ProductRecord[] }) {
+export default function BestSellerSection() {
   const prevButtonRef = useRef<HTMLButtonElement>(null);
   const nextButtonRef = useRef<HTMLButtonElement>(null);
   const swiperRef = useRef<SwiperInstance | null>(null);
 
-  const reducedMotion = usePrefersReducedMotion();
-  const visibleSlides = useVisibleSlides();
-
-  const canScroll = products.length > visibleSlides;
-  const autoplayReady = canScroll && !reducedMotion;
-
-  useEffect(() => {
-    const swiper = swiperRef.current;
-    if (!swiper?.autoplay) {
-      return;
-    }
-
-    if (autoplayReady) {
-      swiper.autoplay.start();
-    } else {
-      swiper.autoplay.stop();
-    }
-  }, [autoplayReady]);
-
-  function pauseAutoplay() {
-    if (autoplayReady) {
-      swiperRef.current?.autoplay?.stop();
-    }
-  }
-
-  function resumeAutoplay(event: React.FocusEvent<HTMLDivElement>) {
-    if (!autoplayReady || event.currentTarget.contains(event.relatedTarget as Node | null)) {
-      return;
-    }
-    swiperRef.current?.autoplay?.start();
-  }
-
-  return (
-    <div className={styles["best-seller-shelf"]}>
-      <BestSellerHeader
-        showControls={canScroll}
-        prevButtonRef={prevButtonRef}
-        nextButtonRef={nextButtonRef}
-      />
-      <div
-        className={styles["best-seller-viewport"]}
-        onFocusCapture={pauseAutoplay}
-        onBlurCapture={resumeAutoplay}
-      >
-        <Swiper
-          modules={[Autoplay, Navigation, A11y]}
-          slidesPerView={BEST_SELLER_BASE_VIEWS}
-          spaceBetween={BEST_SELLER_BASE_GAP}
-          breakpoints={BEST_SELLER_BREAKPOINTS}
-          speed={560}
-          grabCursor
-          autoplay={{
-            delay: AUTOPLAY_DELAY,
-            disableOnInteraction: false,
-            pauseOnMouseEnter: true,
-            stopOnLastSlide: true,
-          }}
-          onBeforeInit={(swiper) => {
-            const navigation = swiper.params.navigation;
-            if (navigation && prevButtonRef.current && nextButtonRef.current) {
-              navigation.prevEl = prevButtonRef.current;
-              navigation.nextEl = nextButtonRef.current;
-            }
-          }}
-          onSwiper={(swiper) => {
-            swiperRef.current = swiper;
-          }}
-          className={styles["best-seller-swiper"]}
-        >
-          {products.map((product) => (
-            <SwiperSlide key={product._id} className={styles["best-seller-slide"]}>
-              <BestSellerCard product={product} />
-            </SwiperSlide>
-          ))}
-        </Swiper>
-      </div>
-    </div>
-  );
-}
-
-export default function BestSellerSection() {
   const productsQuery = useCustomerProducts({
     page: 1,
     limit: BEST_SELLER_LIMIT,
@@ -374,30 +29,102 @@ export default function BestSellerSection() {
     isFeatured: true,
   });
 
-  if (productsQuery.isError) {
-    return null;
-  }
-
   const products = productsQuery.data?.products ?? [];
 
-  if (!productsQuery.isPending && products.length === 0) {
+  if (productsQuery.isError || (!productsQuery.isPending && products.length === 0)) {
     return null;
   }
 
   return (
-    <section className={styles["best-seller-section"]} aria-label="Best Sellers">
-      {productsQuery.isPending ? (
-        <>
-          <BestSellerHeader showControls={false} />
-          <div className={styles["best-seller-skeleton-row"]} aria-hidden="true">
-            {Array.from({ length: 5 }, (_, index) => (
-              <BestSellerCardSkeleton key={index} />
-            ))}
+    <section className="py-16 md:py-24" id="bestsellers" aria-label="Bestsellers">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Section Header */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 pb-4 border-b border-brand-border gap-4">
+          <div>
+            <span className="text-[11px] font-bold tracking-widest uppercase text-brand-muted block mb-1">
+              CURATED SELECTION
+            </span>
+            <h2 className="font-heading font-extrabold text-3xl sm:text-4xl text-brand-charcoal tracking-tight">
+              BESTSELLERS
+            </h2>
+            <p className="text-sm text-brand-muted mt-1">
+              Popular picks, ready to order.
+            </p>
           </div>
-        </>
-      ) : (
-        <BestSellerShelf products={products} />
-      )}
+          <div className="flex items-center gap-4 self-start sm:self-end">
+            <Link
+              href="/shop"
+              className="inline-flex items-center gap-1.5 text-xs font-heading font-bold uppercase tracking-wider text-brand-charcoal hover:text-brand-charcoal/70 transition-colors"
+            >
+              <span>VIEW ALL PRODUCTS</span>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M17 8l4 4m0 0l-4 4m4-4H3" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+              </svg>
+            </Link>
+            {/* Arrow Navigation */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                ref={prevButtonRef}
+                aria-label="Previous best sellers"
+                className="w-9 h-9 rounded-full border border-brand-border bg-white hover:bg-brand-cream text-brand-charcoal flex items-center justify-center transition-all shadow-subtle active:scale-95 disabled:opacity-40"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                ref={nextButtonRef}
+                aria-label="Next best sellers"
+                className="w-9 h-9 rounded-full border border-brand-border bg-white hover:bg-brand-cream text-brand-charcoal flex items-center justify-center transition-all shadow-subtle active:scale-95 disabled:opacity-40"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Swiper Carousel */}
+        <div className="relative">
+          <Swiper
+            modules={[Autoplay, Navigation, A11y]}
+            slidesPerView={1.2}
+            spaceBetween={16}
+            breakpoints={{
+              640: { slidesPerView: 2.3, spaceBetween: 20 },
+              1024: { slidesPerView: 3.5, spaceBetween: 24 },
+              1280: { slidesPerView: 4, spaceBetween: 24 },
+            }}
+            speed={560}
+            grabCursor
+            autoplay={{
+              delay: AUTOPLAY_DELAY,
+              disableOnInteraction: false,
+              pauseOnMouseEnter: true,
+            }}
+            onBeforeInit={(swiper) => {
+              const navigation = swiper.params.navigation;
+              if (navigation && prevButtonRef.current && nextButtonRef.current) {
+                navigation.prevEl = prevButtonRef.current;
+                navigation.nextEl = nextButtonRef.current;
+              }
+            }}
+            onSwiper={(swiper) => {
+              swiperRef.current = swiper;
+            }}
+            className="pb-4"
+          >
+            {products.map((product) => (
+              <SwiperSlide key={product._id} className="h-auto">
+                <ProductCard product={product} />
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        </div>
+      </div>
     </section>
   );
 }

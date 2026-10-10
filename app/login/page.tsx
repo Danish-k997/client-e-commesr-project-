@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { FormEvent, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, Suspense, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { createAuthClient } from "better-auth/react";
 import { inferAdditionalFields } from "better-auth/client/plugins";
@@ -15,8 +15,12 @@ const authClient = createAuthClient({
   plugins: [inferAdditionalFields<typeof auth>()],
 });
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawRedirect = searchParams.get("redirect");
+  const targetRedirect = rawRedirect && rawRedirect.startsWith("/") ? rawRedirect : "/";
+
   const queryClient = useQueryClient();
   const submitting = useRef(false);
   const [email, setEmail] = useState("");
@@ -60,7 +64,7 @@ export default function LoginPage() {
       queryClient.invalidateQueries({ queryKey: cartQueryKeys.cart });
 
       router.replace(
-        getApplicationRole(session.user.role) === "ADMIN" ? "/admin/dashboard" : "/"
+        getApplicationRole(session.user.role) === "ADMIN" ? "/admin/dashboard" : targetRedirect
       );
     } catch {
       setError("We couldn't sign you in right now. Please check your connection and try again.");
@@ -76,14 +80,14 @@ export default function LoginPage() {
         <aside className="auth-visual" aria-label="Brand overview">
           <div className="brand-row">
             <div className="brand-header">
-             <Image 
-  src="/logo final.png" 
-  alt="KASAR DIMENSIONS" 
-  className="brand-image" 
-  width={150} 
-  height={50} 
-  priority={true} 
-/>
+              <Image 
+                src="/logo final.png" 
+                alt="KASAR DIMENSIONS" 
+                className="brand-image" 
+                width={150} 
+                height={50} 
+                priority={true} 
+              />
             </div>
           </div>
 
@@ -117,6 +121,16 @@ export default function LoginPage() {
 
         <section className="auth-panel">
           <div className="auth-card">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-muted hover:text-brand-charcoal transition-colors mb-3"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              <span>Return to Store</span>
+            </Link>
+
             <p className="eyebrow panel-eyebrow">Welcome back</p>
             <h2 className="auth-heading">Access your studio.</h2>
             <p className="auth-description">
@@ -175,7 +189,10 @@ export default function LoginPage() {
             )}
 
             <p className="auth-footer">
-              New to KASAR? <Link href="/signup">Create account</Link>
+              New to KASAR?{" "}
+              <Link href={rawRedirect ? `/signup?redirect=${encodeURIComponent(rawRedirect)}` : "/signup"}>
+                Create account
+              </Link>
             </p>
             <p className="auth-footer secondary-footer">
               Need a new verification email? <Link href="/verify-email">Resend it</Link>
@@ -184,5 +201,13 @@ export default function LoginPage() {
         </section>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="auth-shell" />}>
+      <LoginContent />
+    </Suspense>
   );
 }

@@ -13,23 +13,25 @@ type ProductPageProps = {
 };
 
 const getProductForPage = cache(async (productId: string): Promise<CustomerProductRecord | null> => {
+  // Validate MongoDB ObjectId for database lookup
   try {
     requireObjectId(productId, "productId");
   } catch {
     return null;
   }
 
-  await connectDB();
-
-  const product = await findPublicProduct(productId);
-
-  if (!product) {
+  try {
+    await connectDB();
+    const product = await findPublicProduct(productId);
+    if (!product) {
+      return null;
+    }
+    const variants = await findProductVariants(productId);
+    return serializeCustomerProduct(product, variants) as unknown as CustomerProductRecord;
+  } catch (error) {
+    console.error("Failed to fetch product from database:", error);
     return null;
   }
-
-  const variants = await findProductVariants(productId);
-
-  return serializeCustomerProduct(product, variants) as unknown as CustomerProductRecord;
 });
 
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
@@ -40,7 +42,7 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     return { title: "Product not found | KASAR DIMENSIONS" };
   }
 
-  const title = product.seoTitle?.trim() || product.title;
+  const title = product.seoTitle?.trim() || `${product.title} | KASAR DIMENSIONS`;
   const description =
     product.seoDescription?.trim() ||
     product.shortDescription?.trim() ||

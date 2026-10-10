@@ -1,1 +1,249 @@
-# Architecture prepared: do not recreate missing CSS here\n
+/* ==========================================================================
+   Product Customization Styles — Precision Editorial Craft
+   ========================================================================== */
+
+.product-detail-customization {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 20px;
+  background: var(--surface-soft, #F4F2EB);
+  border: 1px solid var(--border, #E5E3DC);
+}
+
+.product-detail-customization-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.product-detail-customization-head h2 {
+  margin: 0;
+  font-family: var(--font-outfit, Outfit), Arial, sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text, #18181B);
+}
+
+.product-detail-note {
+  margin: 0;
+  color: var(--text-muted, #71717A);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.product-detail-customization-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.product-detail-customization-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--border, #E5E3DC);
+  border-radius: 14px;
+  background: #FFFFFF;
+  transition: border-color 150ms ease;
+}
+
+.product-detail-customization-field.has-error {
+  border-color: #ef4444;
+  background: #fffafa;
+}
+
+.customization-field-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.customization-field-label-row label,
+.customization-field-name {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--text, #18181B);
+}
+
+.customization-required-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(204, 255, 0, 0.3);
+  color: #2e3a00;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.customization-field-help {
+  margin: 0;
+  color: var(--text-muted, #71717A);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.customization-field-error {
+  margin: 0;
+  color: #dc2626;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.customization-field-note {
+  margin: 0;
+  color: var(--text-muted, #71717A);
+  font-size: 0.8rem;
+}
+
+/* Form Controls */
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  width: 100%;
+  border: 1px solid var(--border, #E5E3DC);
+  border-radius: 10px;
+  background: #FFFFFF;
+  color: var(--text, #18181B);
+  padding: 10px 14px;
+  font-size: 0.92rem;
+  font-family: inherit;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+  outline: none;
+  border-color: #18181B;
+  box-shadow: 0 0 0 2px #CCFF00;
+}
+
+.form-field textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+/* Dimensions Inputs Grid */
+.customization-dimensions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 12px;
+}
+
+.customization-dimension {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.customization-dimension-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: var(--text-muted, #71717A);
+}
+
+.customization-dimension-label label {
+  color: inherit;
+  font-weight: 600;
+}
+
+.customization-dimension-unit {
+  font-size: 0.72rem;
+}
+
+/* Image Upload Controls */
+.customization-image-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 12px;
+}
+
+.customization-image-thumb {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  aspect-ratio: 1;
+  border: 1px solid var(--border, #E5E3DC);
+  border-radius: 12px;
+  background: var(--surface-soft, #F4F2EB);
+}
+
+.customization-image-thumb img {
+  object-fit: cover;
+}
+
+.customization-image-remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(24, 24, 27, 0.85);
+  color: #FFFFFF;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.customization-image-remove:hover {
+  background: #000000;
+}
+
+.customization-upload-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px dashed var(--border, #E5E3DC);
+  border-radius: 12px;
+  background: var(--surface-soft, #F4F2EB);
+  color: var(--text, #18181B);
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.customization-upload-button:hover:not(:disabled) {
+  border-color: var(--text, #18181B);
+  background: #FFFFFF;
+  transform: translateY(-1px);
+}
+
+.customization-upload-button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+@media (max-width: 640px) {
+  .product-detail-customization {
+    padding: 16px;
+  }
+
+  .customization-dimensions {
+    grid-template-columns: 1fr;
+  }
+}

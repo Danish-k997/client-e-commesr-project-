@@ -377,6 +377,20 @@
     align-items: flex-start;
     flex-direction: column;
     gap: 18px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .best-seller-header > div:first-child {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .best-seller-viewport {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
 
   .best-seller-skeleton-row {
@@ -392,6 +406,10 @@
 
   .best-seller-shelf {
     gap: 20px;
+  }
+
+  .best-seller-controls {
+    align-self: flex-end;
   }
 
   .best-seller-card-body {

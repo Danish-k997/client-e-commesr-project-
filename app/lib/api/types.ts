@@ -13,6 +13,7 @@ export type ApiResponse<TPayload extends Record<string, unknown> = Record<string
 
 export type ApiRequestOptions<TBody = unknown> = {
   params?: Record<string, string | number | boolean | null | undefined>;
+  headers?: Record<string, string>;
   body?: TBody;
   signal?: AbortSignal;
 };

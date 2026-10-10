@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -81,7 +82,7 @@ function ResetPasswordContent() {
           <aside className="auth-visual" aria-label="Brand overview">
             <div className="brand-row">
               <div className="brand-header">
-                <img src="/logo final.png" alt="KASAR DIMENSIONS" className="brand-image" />
+                <Image src="/logo final.png" alt="KASAR DIMENSIONS" className="brand-image" width={150} height={50} priority={true} />
               </div>
             </div>
             <div className="auth-visual-copy">
@@ -114,7 +115,7 @@ function ResetPasswordContent() {
         <aside className="auth-visual" aria-label="Brand overview">
           <div className="brand-row">
             <div className="brand-header">
-              <img src="/logo final.png" alt="KASAR DIMENSIONS" className="brand-image" />
+              <Image src="/logo final.png" alt="KASAR DIMENSIONS" className="brand-image" width={150} height={50} priority={true} />
             </div>
           </div>
 
@@ -189,7 +190,7 @@ function ResetPasswordSkeleton() {
         <aside className="auth-visual" aria-label="Brand overview">
           <div className="brand-row">
             <div className="brand-header">
-              <img src="/logo final.png" alt="KASAR DIMENSIONS" className="brand-image" />
+              <Image src="/logo final.png" alt="KASAR DIMENSIONS" className="brand-image" width={150} height={50} priority={true} />
             </div>
           </div>
           <div className="auth-visual-copy">
@@ -201,6 +202,15 @@ function ResetPasswordSkeleton() {
         </aside>
         <section className="auth-panel">
           <div className="auth-card">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-muted hover:text-brand-charcoal transition-colors mb-3"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              <span>Return to Store</span>
+            </Link>
             <p className="eyebrow panel-eyebrow">Loading</p>
             <h2 className="auth-heading">Preparing your reset form...</h2>
           </div>

@@ -67,17 +67,17 @@ export default function ProductCustomization({
 
   return (
     <section
-      className="product-detail-customization"
+      className={styles["product-detail-customization"]}
       aria-labelledby="product-customization-heading"
     >
-      <div className="product-detail-customization-head">
+      <div className={styles["product-detail-customization-head"]}>
         <h2 id="product-customization-heading">Customize this product</h2>
         {hasRequiredFields && (
-          <p className="product-detail-note">Fields marked as required must be completed.</p>
+          <p className={styles["product-detail-note"]}>Fields marked as required must be completed.</p>
         )}
       </div>
 
-      <div className="product-detail-customization-fields">
+      <div className={styles["product-detail-customization-fields"]}>
         {fields.map((field) => (
           <CustomizationFieldControl
             key={field.id}
@@ -116,24 +116,24 @@ function CustomizationFieldControl({
 
   return (
     <div
-      className={`form-field product-detail-customization-field${error ? " has-error" : ""}`}
+      className={`${styles["form-field"]} ${styles["product-detail-customization-field"]}${error ? ` ${styles["has-error"]}` : ""}`}
       id={`customization-field-${field.id}`}
       role={isGrouped ? "group" : undefined}
       aria-labelledby={isGrouped ? labelId : undefined}
     >
-      <div className="customization-field-label-row">
+      <div className={styles["customization-field-label-row"]}>
         {isGrouped ? (
-          <span className="customization-field-name" id={labelId}>
+          <span className={styles["customization-field-name"]} id={labelId}>
             {field.label}
           </span>
         ) : (
           <label htmlFor={controlId}>{field.label}</label>
         )}
-        {field.required && <span className="customization-required-badge">Required</span>}
+        {field.required && <span className={styles["customization-required-badge"]}>Required</span>}
       </div>
 
       {helpText && (
-        <p className="customization-field-help" id={helpId}>
+        <p className={styles["customization-field-help"]} id={helpId}>
           {helpText}
         </p>
       )}
@@ -149,7 +149,7 @@ function CustomizationFieldControl({
       />
 
       {error && (
-        <p className="customization-field-error" id={errorId} role="alert">
+        <p className={styles["customization-field-error"]} id={errorId} role="alert">
           {error}
         </p>
       )}
@@ -218,7 +218,7 @@ function SelectControl({
   const options = field.options ?? [];
 
   if (options.length === 0) {
-    return <p className="customization-field-note">This option is unavailable right now.</p>;
+    return <p className={styles["customization-field-note"]}>This option is unavailable right now.</p>;
   }
 
   return (
@@ -280,25 +280,25 @@ function DimensionsControl({
   const axes = DIMENSION_AXES.filter((axis) => Boolean(config?.[axis]?.enabled));
 
   if (axes.length === 0) {
-    return <p className="customization-field-note">This option is unavailable right now.</p>;
+    return <p className={styles["customization-field-note"]}>This option is unavailable right now.</p>;
   }
 
   const unit = config.unit?.trim() || "cm";
 
   return (
-    <div className="customization-dimensions">
+    <div className={styles["customization-dimensions"]}>
       {axes.map((axis) => {
         const axisId = `${controlId}-${axis}`;
         const isAxisRequired = field.required || Boolean(config[axis]?.required);
 
         return (
-          <div className="customization-dimension" key={axis}>
-            <div className="customization-dimension-label">
+          <div className={styles["customization-dimension"]} key={axis}>
+            <div className={styles["customization-dimension-label"]}>
               <label htmlFor={axisId}>
                 {capitalizeAxis(axis)}{" "}
-                <span className="customization-dimension-unit">({unit})</span>
+                <span className={styles["customization-dimension-unit"]}>({unit})</span>
               </label>
-              {isAxisRequired && <span className="customization-axis-required">Required</span>}
+              {isAxisRequired && <span className={styles["customization-axis-required"]}>Required</span>}
             </div>
             <input
               id={axisId}
@@ -413,9 +413,9 @@ function ImageControl({
   return (
     <>
       {images.length > 0 && (
-        <div className="customization-image-list">
+        <div className={styles["customization-image-list"]}>
           {images.map((image, index) => (
-            <div className="customization-image-thumb" key={image.publicId}>
+            <div className={styles["customization-image-thumb"]} key={image.publicId}>
               <Image
                 src={image.url}
                 alt={`${field.label} image ${index + 1} of ${images.length}`}
@@ -424,7 +424,7 @@ function ImageControl({
               />
               <button
                 type="button"
-                className="customization-image-remove"
+                className={styles["customization-image-remove"]}
                 aria-label={`Remove uploaded image for ${field.label}`}
                 onClick={() => handleRemove(image)}
               >
@@ -436,7 +436,7 @@ function ImageControl({
       )}
 
       {!accept ? (
-        <p className="customization-field-note">This option is unavailable right now.</p>
+        <p className={styles["customization-field-note"]}>This option is unavailable right now.</p>
       ) : canAdd ? (
         <>
           <input
@@ -448,7 +448,7 @@ function ImageControl({
           />
           <button
             type="button"
-            className="customization-upload-button"
+            className={styles["customization-upload-button"]}
             disabled={isUploading}
             aria-describedby={controlDescribedBy || undefined}
             onClick={() => inputRef.current?.click()}
@@ -457,13 +457,13 @@ function ImageControl({
           </button>
         </>
       ) : (
-        <p className="customization-field-note">
+        <p className={styles["customization-field-note"]}>
           Maximum of {limit} {limit === 1 ? "image" : "images"} added.
         </p>
       )}
 
       {displayError && (
-        <p className="customization-field-error" id={uploadErrorId} role="alert">
+        <p className={styles["customization-field-error"]} id={uploadErrorId} role="alert">
           {displayError}
         </p>
       )}

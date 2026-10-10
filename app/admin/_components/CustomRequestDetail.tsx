@@ -10,6 +10,7 @@ import {
   formatCustomRequestDate,
   type CustomRequestStatus,
 } from "../../lib/customRequests";
+import styles from "./CustomRequestAdmin.module.css";
 
 function getErrorMessage(error: unknown, fallback = "Something went wrong.") {
   if (error instanceof ApiClientError) {
@@ -33,19 +34,29 @@ export default function CustomRequestDetail() {
   const [notice, setNotice] = useState("");
 
   if (requestsQuery.isLoading) {
-    return <div className="hero-admin-state">Loading custom request...</div>;
+    return (
+      <div className={styles.detailState}>
+        <div className="hero-admin-state">Loading custom request...</div>
+      </div>
+    );
   }
 
   if (requestsQuery.isError) {
     return (
-      <div className="hero-admin-state error">
-        <p>{getErrorMessage(requestsQuery.error, "Could not load custom request.")}</p>
+      <div className={styles.detailState}>
+        <div className="hero-admin-state error">
+          <p>{getErrorMessage(requestsQuery.error, "Could not load custom request.")}</p>
+        </div>
       </div>
     );
   }
 
   if (!request) {
-    return <div className="hero-admin-state error">Custom request not found.</div>;
+    return (
+      <div className={styles.detailState}>
+        <div className="hero-admin-state error">Custom request not found.</div>
+      </div>
+    );
   }
 
   async function handleSave(event: React.FormEvent<HTMLFormElement>) {
@@ -64,7 +75,7 @@ export default function CustomRequestDetail() {
   }
 
   return (
-    <div className="admin-custom-request-detail">
+    <div className={`${styles.detail} admin-custom-request-detail`}>
       <header>
         <span className="eyebrow">CUSTOM REQUEST</span>
         <h1>Custom Request #{request._id.slice(-6)}</h1>
@@ -104,6 +115,16 @@ export default function CustomRequestDetail() {
             <span className="cr-detail-value">{request.quantity}</span>
           </div>
 
+          {request.dimensions && (
+            <div className="cr-detail-field">
+              <span className="cr-detail-label">Dimensions</span>
+              <span className="cr-detail-value">
+                Length: {request.dimensions.length ?? "—"} · Width: {request.dimensions.width ?? "—"} · Height:{" "}
+                {request.dimensions.height ?? "—"} {request.dimensions.unit ?? "cm"}
+              </span>
+            </div>
+          )}
+
           {request.referenceFiles.length > 0 && (
             <div className="cr-detail-field">
               <span className="cr-detail-label">Reference files</span>
@@ -135,7 +156,7 @@ export default function CustomRequestDetail() {
               target="_blank"
               rel="noreferrer"
             >
-              WhatsApp पर बात करें
+              WhatsApp
             </a>
           </div>
         </div>

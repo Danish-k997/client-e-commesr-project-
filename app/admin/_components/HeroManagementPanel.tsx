@@ -482,6 +482,7 @@ export default function HeroManagementPanel() {
                     alt={form.imageAltText || "Hero preview"}
                     width={220}
                     height={160}
+                    unoptimized={Boolean(form.imageDataUrl)}
                     className="hero-preview-image"
                   />
                 </div>

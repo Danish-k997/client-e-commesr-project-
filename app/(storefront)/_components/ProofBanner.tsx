@@ -1,39 +1,47 @@
+import React from "react";
+
 const proofItems = [
   {
-    value: "16+",
-    label: "ENTERPRISE",
-    description: "B2B Prototyping Companies",
+    title: "CUSTOM",
+    subtitle: "MADE",
+    description: "Products crafted specifically around your personal idea or CAD drawing.",
   },
   {
-    value: "79+",
-    label: "FRANCHISE",
-    description: "Batch Manufacturing Clients",
+    title: "DESIGN",
+    subtitle: "SUPPORT",
+    description: "Have a photo but no 3D file? Our engineering team turns it into 3D.",
   },
   {
-    value: "500+",
-    label: "CONSUMER",
-    description: "Custom Art & Decor Buyers",
+    title: "QUALITY",
+    subtitle: "PRINTING",
+    description: "Industrial grade tolerances, high tensile filaments, and flawless post-processing.",
   },
   {
-    value: "99.4%",
-    label: "TOLERANCE",
-    description: "Micron Precision Pass Rate",
+    title: "BULK",
+    subtitle: "ORDERS",
+    description: "Serving 16+ enterprise clients and 79+ franchise batches with verified reliability.",
   },
 ];
 
 export default function ProofBanner() {
   return (
-    <section className="proof-banner" aria-label="KASAR DIMENSIONS proof points">
-      <div className="proof-banner-grid">
-        {proofItems.map((item) => (
-          <article className="proof-banner-item" key={item.label}>
-            <div className="proof-banner-value-row">
-              <strong>{item.value}</strong>
-              <span>{item.label}</span>
+    <section className="border-y border-brand-border bg-brand-cream/60 py-8" aria-label="Studio Capabilities">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-0 md:divide-x divide-brand-border">
+          {proofItems.map((item) => (
+            <div key={item.title} className="px-3 md:px-6 flex flex-col">
+              <span className="font-heading font-extrabold text-2xl lg:text-3xl text-brand-charcoal tracking-tight">
+                {item.title}
+              </span>
+              <span className="text-[11px] font-bold tracking-widest uppercase text-brand-charcoal/70 mb-1">
+                {item.subtitle}
+              </span>
+              <p className="text-xs text-brand-muted leading-relaxed">
+                {item.description}
+              </p>
             </div>
-            <p>{item.description}</p>
-          </article>
-        ))}
+          ))}
+        </div>
       </div>
     </section>
   );
