@@ -69,12 +69,123 @@ if (!process.env.BETTER_AUTH_SECRET) {
   throw new Error("BETTER_AUTH_SECRET is not defined");
 }
 
+const resolveProductionHost = (request?: Request): string => {
+  if (request) {
+    const forwardedHost = request.headers.get("x-forwarded-host");
+    if (forwardedHost) return forwardedHost.split(",")[0].trim();
+    const host = request.headers.get("host");
+    if (host) return host.split(",")[0].trim();
+  }
+
+  if (process.env.RENDER_EXTERNAL_HOSTNAME) {
+    return process.env.RENDER_EXTERNAL_HOSTNAME;
+  }
+  if (process.env.RENDER_EXTERNAL_URL) {
+    try {
+      return new URL(process.env.RENDER_EXTERNAL_URL).host;
+    } catch {
+      // ignore
+    }
+  }
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  }
+  if (process.env.VERCEL_URL) {
+    return process.env.VERCEL_URL;
+  }
+  if (process.env.BETTER_AUTH_URL) {
+    try {
+      const url = new URL(process.env.BETTER_AUTH_URL);
+      if (url.hostname !== "localhost" && url.hostname !== "127.0.0.1") {
+        return url.host;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return "client-e-commesr-project.onrender.com";
+};
+
+const resolveFallbackBaseURL = (): string => {
+  if (process.env.BETTER_AUTH_URL) {
+    try {
+      const url = new URL(process.env.BETTER_AUTH_URL);
+      if (
+        process.env.NODE_ENV === "production" &&
+        (url.hostname === "localhost" || url.hostname === "127.0.0.1")
+      ) {
+        // In production, ignore misconfigured localhost:3000
+      } else {
+        return process.env.BETTER_AUTH_URL;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  if (process.env.RENDER_EXTERNAL_URL) {
+    return process.env.RENDER_EXTERNAL_URL;
+  }
+  if (process.env.RENDER_EXTERNAL_HOSTNAME) {
+    return `https://${process.env.RENDER_EXTERNAL_HOSTNAME}`;
+  }
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    return "https://client-e-commesr-project.onrender.com";
+  }
+
+  return "http://localhost:3000";
+};
+
+const allowedHosts = Array.from(
+  new Set([
+    "localhost:3000",
+    "127.0.0.1:3000",
+    "client-e-commesr-project.onrender.com",
+    "client-e-commesr-project.vercel.app",
+    "client-e-commesr-project-q6cxmls9c.vercel.app",
+    ...(process.env.RENDER_EXTERNAL_HOSTNAME ? [process.env.RENDER_EXTERNAL_HOSTNAME] : []),
+    ...(process.env.VERCEL_URL ? [process.env.VERCEL_URL] : []),
+    ...(process.env.BETTER_AUTH_URL
+      ? [
+          (() => {
+            try {
+              return new URL(process.env.BETTER_AUTH_URL).host;
+            } catch {
+              return process.env.BETTER_AUTH_URL;
+            }
+          })(),
+        ]
+      : []),
+    ...(process.env.BETTER_AUTH_TRUSTED_ORIGINS
+      ? process.env.BETTER_AUTH_TRUSTED_ORIGINS.split(",")
+          .map((origin) => {
+            try {
+              return new URL(origin.trim()).host;
+            } catch {
+              return origin.trim();
+            }
+          })
+          .filter(Boolean)
+      : []),
+  ])
+);
+
 const configuredOrigins = [
   "http://localhost:3000",
   "https://client-e-commesr-project.vercel.app",
   "https://client-e-commesr-project-q6cxmls9c.vercel.app",
   "https://client-e-commesr-project.onrender.com",
+  ...(process.env.RENDER_EXTERNAL_URL ? [process.env.RENDER_EXTERNAL_URL] : []),
   ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
+  ...(process.env.BETTER_AUTH_URL ? [process.env.BETTER_AUTH_URL] : []),
   ...(process.env.BETTER_AUTH_TRUSTED_ORIGINS
     ? process.env.BETTER_AUTH_TRUSTED_ORIGINS.split(",")
         .map((origin) => origin.trim())
@@ -84,18 +195,50 @@ const configuredOrigins = [
 
 const trustedOrigins = Array.from(new Set(configuredOrigins));
 
-const resolveBaseURL = () => {
-  if (process.env.BETTER_AUTH_URL) {
-    return process.env.BETTER_AUTH_URL;
+const sanitizeAuthLink = (rawUrl: string, request?: Request): string => {
+  try {
+    const parsed = new URL(rawUrl);
+    const isLocalhost =
+      parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1";
+
+    if (isLocalhost && process.env.NODE_ENV === "production") {
+      const prodHost = resolveProductionHost(request);
+      const proto = request?.headers.get("x-forwarded-proto") || "https";
+
+      parsed.protocol = `${proto}:`;
+      parsed.host = prodHost;
+    }
+
+    const callbackParam = parsed.searchParams.get("callbackURL");
+    if (callbackParam) {
+      try {
+        const callbackUrl = new URL(callbackParam, parsed.origin);
+        if (
+          (callbackUrl.hostname === "localhost" ||
+            callbackUrl.hostname === "127.0.0.1") &&
+          process.env.NODE_ENV === "production"
+        ) {
+          callbackUrl.protocol = parsed.protocol;
+          callbackUrl.host = parsed.host;
+          parsed.searchParams.set("callbackURL", callbackUrl.toString());
+        }
+      } catch {
+        // relative callbackURL is preserved
+      }
+    }
+
+    return parsed.toString();
+  } catch {
+    return rawUrl;
   }
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
-  return "http://localhost:3000";
 };
 
 export const auth = betterAuth({
-  baseURL: resolveBaseURL(),
+  baseURL: {
+    allowedHosts,
+    fallback: resolveFallbackBaseURL(),
+    protocol: "auto",
+  },
   secret: process.env.BETTER_AUTH_SECRET,
   trustedOrigins,
   database: mongodbAdapter(mongoDb, {
@@ -135,16 +278,18 @@ export const auth = betterAuth({
     autoSignIn: false,
     resetPasswordTokenExpiresIn: 3600,
     revokeSessionsOnPasswordReset: true,
-    sendResetPassword: async ({ user, url }) => {
+    sendResetPassword: async ({ user, url }, request) => {
       if (!resendApiKey) {
         throw new Error("RESEND_API_KEY is not defined");
       }
+
+      const safeUrl = sanitizeAuthLink(url, request);
 
       const response = await resend.emails.send({
         from: resendFrom,
         to: user.email,
         subject: "Reset your password",
-        html: buildPasswordResetEmailHtml(user.name || "there", url),
+        html: buildPasswordResetEmailHtml(user.name || "there", safeUrl),
       });
 
       if (response.error) {
@@ -157,16 +302,18 @@ export const auth = betterAuth({
     sendOnSignUp: true,
     expiresIn: 86400,
     autoSignInAfterVerification: true,
-    sendVerificationEmail: async ({ user, url }) => {
+    sendVerificationEmail: async ({ user, url }, request) => {
       if (!resendApiKey) {
         throw new Error("RESEND_API_KEY is not defined");
       }
+
+      const safeUrl = sanitizeAuthLink(url, request);
 
       const response = await resend.emails.send({
         from: resendFrom,
         to: user.email,
         subject: "Verify your email",
-        html: buildVerificationEmailHtml(user.name || "there", url),
+        html: buildVerificationEmailHtml(user.name || "there", safeUrl),
       });
 
       if (response.error) {

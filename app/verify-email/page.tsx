@@ -55,7 +55,7 @@ export default function VerifyEmailPage() {
             return;
           }
           if (data?.user.emailVerified) {
-            router.replace("/");
+            router.replace("/account");
           }
         } catch {
           setStatus("error");
@@ -81,7 +81,7 @@ export default function VerifyEmailPage() {
           return;
         }
 
-        router.replace("/");
+        router.replace("/account");
       } catch {
         setStatus("error");
         setMessage("We couldn't verify your email right now. Please try again or request a new link.");
@@ -104,7 +104,7 @@ export default function VerifyEmailPage() {
     try {
       const { data, error } = await authClient.sendVerificationEmail({
         email: email.trim(),
-        callbackURL: `${window.location.origin}/`,
+        callbackURL: `${window.location.origin}/account`,
       });
 
       if (error) {

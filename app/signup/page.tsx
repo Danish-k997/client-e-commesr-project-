@@ -34,6 +34,7 @@ function SignupContent() {
         name,
         email,
         password,
+        callbackURL: "/account",
       });
 
       if (error) {
