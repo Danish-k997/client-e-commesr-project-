@@ -904,6 +904,43 @@ input {
   line-height: 1;
 }
 
+.site-dashboard-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border: 1px solid rgba(24, 24, 27, 0.14);
+  border-radius: 999px;
+  background: #18181b;
+  color: #f4f4f5;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.site-dashboard-pill:hover {
+  background: #27272a;
+  border-color: rgba(24, 24, 27, 0.28);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(24, 24, 27, 0.18);
+}
+
+.site-dashboard-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ccff00;
+  flex-shrink: 0;
+  box-shadow: 0 0 8px rgba(204, 255, 0, 0.6);
+  animation: pulseClubDot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
 .site-dashboard-link {
   color: var(--text-muted);
   font-size: 0.78rem;
@@ -2792,6 +2829,7 @@ button:focus-visible {
     display: inline-grid;
   }
 
+  .site-dashboard-pill,
   .site-dashboard-link {
     display: none;
   }
@@ -2845,7 +2883,24 @@ button:focus-visible {
   }
 
   .site-mobile-dashboard {
-    color: #506600;
+    display: flex !important;
+    align-items: center;
+    gap: 10px;
+    color: #18181b;
+    font-weight: 700;
+  }
+
+  .site-mobile-dashboard-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: #18181b;
+    color: #ccff00;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
   .site-mobile-utilities {
@@ -2906,6 +2961,7 @@ button:focus-visible {
 
   .site-header-actions > .site-icon-button,
   .site-header-actions > .site-club-pill,
+  .site-header-actions > .site-dashboard-pill,
   .site-header-actions > .site-primary-cta {
     display: none;
   }
@@ -3642,6 +3698,7 @@ button:focus-visible {
 .site-nav-dropdown-item:focus-visible,
 .site-icon-button:focus-visible,
 .site-club-pill:focus-visible,
+.site-dashboard-pill:focus-visible,
 .site-primary-cta:focus-visible,
 .site-dashboard-link:focus-visible,
 .site-menu-button:focus-visible,
@@ -3778,6 +3835,7 @@ textarea:focus-visible {
     display: none !important;
   }
 
+  .site-header-actions > .site-dashboard-pill,
   .site-header-actions > .site-dashboard-link {
     display: none !important;
   }

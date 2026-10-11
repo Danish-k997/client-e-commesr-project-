@@ -3,8 +3,12 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
+import { createAuthClient } from "better-auth/react";
 
 import { getCartItemCount, useCart, useCategories } from "../../lib/api";
+import { getApplicationRole } from "../../lib/roles";
+
+const authClient = createAuthClient();
 
 type GlobalHeaderProps = {
   isAdmin: boolean;
@@ -60,10 +64,38 @@ function UserIcon() {
   );
 }
 
-export default function GlobalHeader({ isAdmin }: GlobalHeaderProps) {
+export default function GlobalHeader({ isAdmin: initialIsAdmin }: GlobalHeaderProps) {
+  const [clientIsAdmin, setClientIsAdmin] = useState<boolean | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [isMobileCategoriesOpen, setIsMobileCategoriesOpen] = useState(false);
+
+  const isAdmin = clientIsAdmin ?? initialIsAdmin;
+
+  useEffect(() => {
+    let isMounted = true;
+    async function syncAdminSession() {
+      try {
+        const { data } = await authClient.getSession();
+        if (isMounted) {
+          if (data?.user) {
+            const role = (data.user as { role?: string }).role;
+            setClientIsAdmin(getApplicationRole(role) === "ADMIN");
+          } else {
+            setClientIsAdmin(false);
+          }
+        }
+      } catch {
+        // Silently preserve initialIsAdmin if session check fails
+      }
+    }
+
+    void syncAdminSession();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLElement>(null);
@@ -261,18 +293,19 @@ export default function GlobalHeader({ isAdmin }: GlobalHeaderProps) {
           <Link className="site-icon-button" href="/account" aria-label="Customer account">
             <UserIcon />
           </Link>
-          <Link className="site-club-pill" href="/membership" aria-label="₹99 Club Membership">
-            <span className="site-club-dot" aria-hidden="true" />
-            <span>₹99 Club</span>
-          </Link>
+          {isAdmin && (
+            <Link
+              className="site-dashboard-pill"
+              href="/admin/dashboard"
+              aria-label="Admin Dashboard"
+            >
+              <span className="site-dashboard-dot" aria-hidden="true" />
+              <span>Dashboard</span>
+            </Link>
+          )}
           <Link className="site-primary-cta" href="/shop?customizable=true">
             Customize now
           </Link>
-          {isAdmin && (
-            <Link className="site-dashboard-link" href="/admin/dashboard">
-              Dashboard
-            </Link>
-          )}
           <button
             ref={menuButtonRef}
             className="site-menu-button"
@@ -337,11 +370,12 @@ export default function GlobalHeader({ isAdmin }: GlobalHeaderProps) {
             <span className="site-nav-dot" aria-hidden="true" />
           </Link>
           <Link href="/#bestsellers" onClick={closeMenu}>Bestsellers</Link>
-          <Link href="/membership" onClick={closeMenu}>₹99 Club Membership</Link>
+          <Link href="/membership" onClick={closeMenu}>Membership</Link>
           <Link href="/account" onClick={closeMenu}>My Account & Addresses</Link>
           {isAdmin && (
             <Link className="site-mobile-dashboard" href="/admin/dashboard" onClick={closeMenu}>
-              Dashboard
+              <span className="site-mobile-dashboard-badge">ADMIN</span>
+              <span>Dashboard</span>
             </Link>
           )}
         </div>
