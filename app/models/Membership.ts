@@ -9,7 +9,7 @@ export const MEMBERSHIP_STATUSES = [
   "ACTIVE",
   "EXPIRED",
   "CANCELLED",
-] as const;
+] as const;                
 
 export type MembershipStatus = (typeof MEMBERSHIP_STATUSES)[number];
 
