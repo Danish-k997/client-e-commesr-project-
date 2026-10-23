@@ -113,7 +113,7 @@ export default function VerifyEmailPage() {
         setMessage(
           isAlreadyVerified
             ? "This email is already verified. You can sign in."
-            : "We couldn't send the email right now. Please try again after the short wait."
+            : "We couldn't deliver the verification email right now. Please try again after the short wait or contact support if the issue persists."
         );
         return;
       }
@@ -123,11 +123,11 @@ export default function VerifyEmailPage() {
         setMessage("If this email needs verification, a link has been sent. Check your inbox and spam folder.");
       } else {
         setStatus("error");
-        setMessage("We couldn't send the email right now. Please try again after the short wait.");
+        setMessage("We couldn't deliver the verification email right now. Please try again after the short wait or contact support if the issue persists.");
       }
     } catch {
       setStatus("error");
-      setMessage("We couldn't send the email right now. Please try again after the short wait.");
+      setMessage("We couldn't deliver the verification email right now. Please try again after the short wait or contact support if the issue persists.");
     } finally {
       resendInProgress.current = false;
       setLoading(false);
