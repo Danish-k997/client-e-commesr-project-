@@ -22,6 +22,14 @@ export type ProductImageRecord = {
   isPrimary?: boolean;
 };
 
+export type ProductImageUploadSignature = {
+  signature: string;
+  timestamp: number;
+  apiKey: string;
+  cloudName: string;
+  folder: string;
+};
+
 export type ProductVariationDefinition = {
   name: string;
   options: string[];
@@ -310,6 +318,8 @@ type DeleteResponse = ApiSuccessResponse<{
   deleted: boolean;
 }>;
 
+type UploadSignatureResponse = ApiSuccessResponse<ProductImageUploadSignature>;
+
 export const productQueryKeys = {
   lists: ["admin", "products"] as const,
   list: (params: ProductListParams) => ["admin", "products", params] as const,
@@ -406,6 +416,26 @@ export async function updateProduct(productId: string, payload: ProductPayload) 
 export async function archiveProduct(productId: string) {
   const response = await apiRequest<ProductArchiveResponse>("DELETE", `/api/products/${productId}`);
   return response;
+}
+
+export async function getProductImageUploadSignature() {
+  const response = await apiRequest<UploadSignatureResponse>("POST", "/api/admin/products/upload-signature");
+  return {
+    signature: response.signature,
+    timestamp: response.timestamp,
+    apiKey: response.apiKey,
+    cloudName: response.cloudName,
+    folder: response.folder,
+  };
+}
+
+export async function destroyProductImage(publicId: string): Promise<boolean> {
+  const response = await apiRequest<ApiSuccessResponse<{ deleted: boolean }>>(
+    "POST",
+    "/api/admin/products/destroy-image",
+    { body: { publicId } }
+  );
+  return Boolean(response.deleted);
 }
 
 export async function listCategories(signal?: AbortSignal) {

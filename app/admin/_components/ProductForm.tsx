@@ -6,8 +6,8 @@ import { useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 
 import {
   ApiClientError,
+  getProductImageUploadSignature,
   type DeliveryType,
-  type ProductImagePayload,
   type ProductPayload,
   type ProductRecord,
   type ProductSpecification,
@@ -34,8 +34,19 @@ type ProductFormProps = {
   product?: ProductRecord;
 };
 
-type ImageField = ProductImagePayload & {
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"];
+const MAX_IMAGE_FILE_BYTES = 10 * 1024 * 1024; // 10 MB per image
+
+type ImageField = {
   key: string;
+  url?: string;
+  publicId?: string;
+  altText?: string;
+  isPrimary?: boolean;
+  file?: File;
+  previewUrl?: string;
+  uploadStatus?: "idle" | "uploading" | "success" | "error";
+  uploadError?: string;
 };
 
 type VariationOptionDraft = {
@@ -140,6 +151,8 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
   );
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState("");
   const subcategoriesQuery = useSubcategories(categoryId);
   const createMutation = useCreateProduct();
   const updateMutation = useUpdateProduct(product?._id ?? "");
@@ -148,9 +161,9 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
   const imageReferences = useMemo(
     () =>
       images
-        .filter((image) => image.url || image.publicId)
+        .filter((image) => image.url || image.previewUrl || image.publicId)
         .map((image) => ({
-          value: image.imageDataUrl ? image.key : image.publicId || image.url || image.key,
+          value: image.file ? image.key : image.publicId || image.url || image.key,
           label: image.altText || image.url || image.publicId || "Product image",
         })),
     [images]
@@ -179,6 +192,11 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
   }
 
   function removeImage(index: number) {
+    const target = images[index];
+    if (target?.previewUrl?.startsWith("blob:")) {
+      URL.revokeObjectURL(target.previewUrl);
+    }
+
     setImages((current) => {
       const next = current.filter((_, imageIndex) => imageIndex !== index);
       return next.length > 0 && next.some((image) => image.isPrimary)
@@ -187,33 +205,47 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
     });
   }
 
-  async function handleImageFile(index: number, event: ChangeEvent<HTMLInputElement>) {
+  function handleImageFile(index: number, event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
 
     if (!file) {
       return;
     }
 
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      setError(`Invalid file type for "${file.name}". Please upload a JPG, PNG, WebP, GIF, or AVIF image.`);
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_FILE_BYTES) {
+      setError(`"${file.name}" is too large. Image file must be 10MB or smaller.`);
+      return;
+    }
+
     const previousImage = images[index];
     const previousReference = previousImage?.publicId || previousImage?.url || previousImage?.key;
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        updateImage(index, {
-          imageDataUrl: reader.result,
-          url: reader.result,
-          publicId: "",
-          altText: images[index]?.altText || file.name.replace(/\.[^.]+$/, ""),
-        });
-        setVariants((current) =>
-          current.map((variant) =>
-            variant.imageId === previousReference ? { ...variant, imageId: previousImage.key } : variant
-          )
-        );
-      }
-    };
-    reader.readAsDataURL(file);
+    if (previousImage?.previewUrl?.startsWith("blob:")) {
+      URL.revokeObjectURL(previousImage.previewUrl);
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+
+    updateImage(index, {
+      file,
+      previewUrl,
+      url: previewUrl,
+      publicId: "",
+      altText: images[index]?.altText || file.name.replace(/\.[^.]+$/, ""),
+      uploadStatus: "idle",
+      uploadError: undefined,
+    });
+
+    setVariants((current) =>
+      current.map((variant) =>
+        variant.imageId === previousReference ? { ...variant, imageId: previousImage.key } : variant
+      )
+    );
   }
 
   function addVariation() {
@@ -378,7 +410,7 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
       }
     }
 
-    const usableImages = images.filter((image) => image.url || image.imageDataUrl);
+    const usableImages = images.filter((image) => image.url || image.previewUrl || image.file);
 
     if (usableImages.length < 1 || usableImages.length > 8) {
       return "Products need between 1 and 8 images.";
@@ -443,7 +475,7 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
     return "";
   }
 
-  function buildPayload(): ProductPayload {
+  function buildPayload(currentImages: ImageField[] = images): ProductPayload {
     const parsedCompareAtPrice = toMinorUnits(compareAtPrice);
     const resolvedDeliveryFee = deliveryType === "PAID" ? Number(deliveryFee) : 0;
 
@@ -459,13 +491,12 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
       stock: Number(stock),
       deliveryType,
       deliveryFee: resolvedDeliveryFee,
-      images: images
-        .filter((image) => image.url || image.imageDataUrl)
+      images: currentImages
+        .filter((image) => image.url && !image.file)
         .map((image) => ({
           clientId: image.key,
-          url: image.imageDataUrl ? undefined : image.url,
-          imageDataUrl: image.imageDataUrl,
-          publicId: image.imageDataUrl ? undefined : image.publicId,
+          url: image.url!,
+          publicId: image.publicId || "",
           altText: image.altText?.trim() ?? "",
           isPrimary: Boolean(image.isPrimary),
         })),
@@ -515,8 +546,74 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
       return;
     }
 
+    const currentImages = [...images];
+    const pendingUploads = currentImages.filter((img) => Boolean(img.file));
+
+    if (pendingUploads.length > 0) {
+      setIsUploading(true);
+      setUploadMessage("Authorizing image upload...");
+
+      try {
+        const signatureData = await getProductImageUploadSignature();
+
+        for (let i = 0; i < currentImages.length; i++) {
+          const img = currentImages[i];
+          if (!img.file) continue;
+
+          setUploadMessage(`Uploading image ${i + 1} of ${currentImages.length}...`);
+          updateImage(i, { uploadStatus: "uploading", uploadError: undefined });
+
+          const formData = new FormData();
+          formData.append("file", img.file);
+          formData.append("api_key", signatureData.apiKey);
+          formData.append("timestamp", String(signatureData.timestamp));
+          formData.append("signature", signatureData.signature);
+          formData.append("folder", signatureData.folder);
+
+          const res = await fetch(
+            `https://api.cloudinary.com/v1_1/${signatureData.cloudName}/image/upload`,
+            {
+              method: "POST",
+              body: formData,
+            }
+          );
+
+          const data = await res.json();
+
+          if (!res.ok || !data.secure_url) {
+            const uploadErr = data?.error?.message || "Upload to Cloudinary failed.";
+            updateImage(i, { uploadStatus: "error", uploadError: uploadErr });
+            throw new Error(`Failed to upload "${img.altText || img.file.name}": ${uploadErr}`);
+          }
+
+          if (img.previewUrl?.startsWith("blob:")) {
+            URL.revokeObjectURL(img.previewUrl);
+          }
+
+          currentImages[i] = {
+            ...img,
+            url: data.secure_url,
+            publicId: data.public_id,
+            file: undefined,
+            previewUrl: undefined,
+            uploadStatus: "success",
+            uploadError: undefined,
+          };
+          setImages([...currentImages]);
+        }
+      } catch (uploadErr) {
+        setIsUploading(false);
+        setUploadMessage("");
+        setError(uploadErr instanceof Error ? uploadErr.message : "Failed to upload product images.");
+        return;
+      }
+
+      setIsUploading(false);
+      setUploadMessage("");
+    }
+
     try {
-      const savedProduct = await mutation.mutateAsync(buildPayload());
+      const savedProduct = await mutation.mutateAsync(buildPayload(currentImages));
       setNotice(mode === "create" ? "Product created." : "Product updated.");
       if (mode === "create") {
         router.push("/admin/products");
@@ -726,31 +823,90 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
         <div className="product-image-grid">
           {images.map((image, index) => (
             <article className="product-image-editor" key={image.key}>
-              {image.url ? (
+              {image.url || image.previewUrl ? (
                 <Image
                   className="product-image-preview"
-                  src={image.url}
+                  src={image.url || image.previewUrl || ""}
                   alt={image.altText || "Product preview"}
                   width={180}
                   height={135}
-                  unoptimized={image.url.startsWith("data:")}
+                  unoptimized={Boolean(
+                    image.previewUrl ||
+                    image.url?.startsWith("blob:") ||
+                    image.url?.startsWith("data:")
+                  )}
                 />
               ) : (
                 <div className="product-image-placeholder">Image preview</div>
               )}
               <div className="form-field">
                 <label htmlFor={`product-image-file-${image.key}`}>Upload</label>
-                <input id={`product-image-file-${image.key}`} type="file" accept="image/*" onChange={(event) => handleImageFile(index, event)} />
+                <input
+                  id={`product-image-file-${image.key}`}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+                  disabled={isUploading || mutation.isPending}
+                  onChange={(event) => handleImageFile(index, event)}
+                />
               </div>
+              {image.uploadStatus === "uploading" && (
+                <div style={{ fontSize: "0.8rem", color: "var(--accent, #e11d48)", fontWeight: 600 }}>
+                  Uploading to Cloudinary...
+                </div>
+              )}
+              {image.uploadStatus === "error" && (
+                <div style={{ fontSize: "0.8rem", color: "var(--danger, #ef4444)", fontWeight: 600 }}>
+                  {image.uploadError || "Upload failed"}
+                </div>
+              )}
+              {image.uploadStatus === "success" && (
+                <div style={{ fontSize: "0.8rem", color: "#10b981", fontWeight: 600 }}>
+                  Uploaded to Cloudinary ✓
+                </div>
+              )}
+              {image.file && image.uploadStatus !== "uploading" && (
+                <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+                  Ready to upload ({(image.file.size / (1024 * 1024)).toFixed(1)} MB)
+                </div>
+              )}
               <div className="form-field">
                 <label htmlFor={`product-image-alt-${image.key}`}>Alt text</label>
-                <input id={`product-image-alt-${image.key}`} value={image.altText ?? ""} onChange={(event) => updateImage(index, { altText: event.target.value })} />
+                <input
+                  id={`product-image-alt-${image.key}`}
+                  value={image.altText ?? ""}
+                  disabled={isUploading || mutation.isPending}
+                  onChange={(event) => updateImage(index, { altText: event.target.value })}
+                />
               </div>
               <div className="product-image-actions">
-                <button type="button" onClick={() => setPrimaryImage(index)}>{image.isPrimary ? "Primary" : "Set primary"}</button>
-                <button type="button" disabled={index === 0} onClick={() => moveImage(index, -1)}>Up</button>
-                <button type="button" disabled={index === images.length - 1} onClick={() => moveImage(index, 1)}>Down</button>
-                <button type="button" disabled={images.length <= 1} onClick={() => removeImage(index)}>Remove</button>
+                <button
+                  type="button"
+                  disabled={isUploading || mutation.isPending}
+                  onClick={() => setPrimaryImage(index)}
+                >
+                  {image.isPrimary ? "Primary" : "Set primary"}
+                </button>
+                <button
+                  type="button"
+                  disabled={index === 0 || isUploading || mutation.isPending}
+                  onClick={() => moveImage(index, -1)}
+                >
+                  Up
+                </button>
+                <button
+                  type="button"
+                  disabled={index === images.length - 1 || isUploading || mutation.isPending}
+                  onClick={() => moveImage(index, 1)}
+                >
+                  Down
+                </button>
+                <button
+                  type="button"
+                  disabled={images.length <= 1 || isUploading || mutation.isPending}
+                  onClick={() => removeImage(index)}
+                >
+                  Remove
+                </button>
               </div>
             </article>
           ))}
@@ -974,8 +1130,14 @@ export default function ProductForm({ mode, product }: ProductFormProps) {
       </section>
 
       <div className="hero-manager-form-actions product-form-actions">
-        <button className="primary-btn" type="submit" disabled={mutation.isPending}>
-          {mutation.isPending ? "Saving..." : mode === "create" ? "Create product" : "Update product"}
+        <button className="primary-btn" type="submit" disabled={mutation.isPending || isUploading}>
+          {isUploading
+            ? uploadMessage || "Uploading images..."
+            : mutation.isPending
+              ? "Saving..."
+              : mode === "create"
+                ? "Create product"
+                : "Update product"}
         </button>
         <button className="secondary-btn" type="button" onClick={() => router.push("/admin/products")}>
           Back to products

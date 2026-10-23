@@ -432,7 +432,12 @@ export async function destroyRemovedImages(previousImages: IProductImage[], next
   const nextPublicIds = new Set(nextImages.map((image) => image.publicId).filter(Boolean));
   const removedPublicIds = previousImages
     .map((image) => image.publicId)
-    .filter((publicId): publicId is string => Boolean(publicId) && !nextPublicIds.has(publicId));
+    .filter(
+      (publicId): publicId is string =>
+        typeof publicId === "string" &&
+        publicId.startsWith("kesar-dimensions/products/") &&
+        !nextPublicIds.has(publicId)
+    );
 
   if (removedPublicIds.length === 0) {
     return;
@@ -441,8 +446,7 @@ export async function destroyRemovedImages(previousImages: IProductImage[], next
   try {
     await Promise.all(removedPublicIds.map((publicId) => cloudinary.uploader.destroy(publicId)));
   } catch (error) {
-    console.error("Cloudinary image cleanup failed:", error);
-    throw new ApiError(502, "Failed to clean up replaced product images.");
+    console.warn("Cloudinary product image cleanup non-fatal warning:", error);
   }
 }
 
@@ -599,9 +603,11 @@ async function parseImages(value: unknown): Promise<ProductImagePayload[]> {
     const url = readString(entry.url ?? entry.secureUrl, `images[${index}].url`, true);
     const publicId = readString(entry.publicId, `images[${index}].publicId`, false) ?? "";
 
-    if (!url || !isValidUrl(url)) {
-      throw new ApiError(400, `images[${index}].url must be a valid URL.`);
+    if (!url) {
+      throw new ApiError(400, `images[${index}].url is required.`);
     }
+
+    validateProductImageReference(url, publicId, index);
 
     return {
       url,
@@ -879,6 +885,36 @@ function isValidUrl(value: string) {
     return parsed.protocol === "http:" || parsed.protocol === "https:";
   } catch {
     return false;
+  }
+}
+
+function validateProductImageReference(url: string, publicId: string, index: number) {
+  if (!isValidUrl(url)) {
+    throw new ApiError(400, `images[${index}].url must be a valid HTTP or HTTPS URL.`);
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new ApiError(400, `images[${index}].url has an invalid URL format.`);
+  }
+
+  const allowedHostnames = ["res.cloudinary.com", "images.unsplash.com", "lh3.googleusercontent.com"];
+  if (!allowedHostnames.includes(parsed.hostname)) {
+    throw new ApiError(400, `images[${index}].url host "${parsed.hostname}" is not permitted.`);
+  }
+
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+  if (parsed.hostname === "res.cloudinary.com" && cloudName) {
+    const pathSegments = parsed.pathname.split("/").filter(Boolean);
+    if (pathSegments.length > 0 && pathSegments[0] !== cloudName) {
+      throw new ApiError(400, `images[${index}].url does not belong to authorized Cloudinary account.`);
+    }
+  }
+
+  if (publicId && !publicId.startsWith("kesar-dimensions/products/")) {
+    throw new ApiError(400, `images[${index}].publicId does not belong to permitted product folder.`);
   }
 }
 
