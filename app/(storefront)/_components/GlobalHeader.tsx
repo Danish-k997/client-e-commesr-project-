@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
@@ -213,11 +214,22 @@ export default function GlobalHeader({ isAdmin: initialIsAdmin }: GlobalHeaderPr
       </a>
       <div className="site-header-inner">
         <Link className="site-brand" href="/" aria-label="KASAR DIMENSIONS home" onClick={closeMenu}>
-          <span className="site-brand-name">KASAR</span>
-          <span className="site-brand-subtitle">DIMENSIONS</span>
+          <Image
+            src="/logo final.png"
+            alt="KASAR DIMENSIONS logo"
+            width={40}
+            height={43}
+            className="site-brand-logo"
+            priority
+          />
+          <div className="site-brand-text">
+            <span className="site-brand-name">KASAR</span>
+            <span className="site-brand-subtitle">DIMENSIONS</span>
+          </div>
         </Link>
 
         <nav className="site-nav site-nav-desktop" aria-label="Main navigation">
+          <Link href="/">Home</Link>
           <Link href="/shop">Shop</Link>
 
           <div
@@ -329,6 +341,7 @@ export default function GlobalHeader({ isAdmin: initialIsAdmin }: GlobalHeaderPr
         inert={!isMenuOpen}
       >
         <div className="site-mobile-nav-links">
+          <Link href="/" onClick={closeMenu}>Home</Link>
           <Link href="/shop" onClick={closeMenu}>Shop</Link>
 
           <div className="site-mobile-category-group">
