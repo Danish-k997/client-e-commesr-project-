@@ -34,17 +34,6 @@ type HeroSlideApi = {
   sortOrder: number;
 };
 
-function formatPrice(value: unknown) {
-  if (typeof value !== "number") {
-    return "From ₹0";
-  }
-
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(value / 100);
-}
 
 export default function HeroSection() {
   const [slides, setSlides] = useState<HeroSlideApi[]>([]);
@@ -189,7 +178,11 @@ export default function HeroSection() {
 
             {/* Right Column: Featured Luminaire Showcase Card */}
             <div className="lg:col-span-6 xl:col-span-7 relative">
-              <div className="relative mx-auto rounded-3xl overflow-hidden border border-brand-border bg-white shadow-card">
+              <Link
+                href="/shop"
+                className="group block relative mx-auto rounded-3xl overflow-hidden border border-brand-border bg-white shadow-card transition-all hover:shadow-md"
+                aria-label="Explore our collection"
+              >
                 <div className="relative w-full h-[380px] sm:h-[480px]">
                   <Image
                     src="https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=1200&q=80"
@@ -197,17 +190,8 @@ export default function HeroSection() {
                     fill
                     priority
                     sizes="(max-width: 1024px) 100vw, 55vw"
-                    className="object-cover object-center transition-transform duration-700 hover:scale-[1.02]"
+                    className="object-cover object-center transition-transform duration-700 group-hover:scale-[1.02]"
                   />
-                </div>
-
-                {/* Bottom Left Product Tag */}
-                <div className="absolute bottom-5 left-5 right-5 sm:right-auto bg-white/95 backdrop-blur-md border border-brand-border/80 px-4 py-3 rounded-2xl shadow-sm flex items-center justify-between sm:gap-6">
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-brand-muted block">Bestselling Lighting</span>
-                    <span className="font-heading font-bold text-sm text-brand-charcoal">Parametric Helix Luminaire</span>
-                  </div>
-                  <span className="font-heading font-extrabold text-sm text-brand-charcoal bg-brand-cream px-2.5 py-1 rounded-lg border border-brand-border">₹1,899</span>
                 </div>
 
                 {/* Floating Proof Badges */}
@@ -223,11 +207,11 @@ export default function HeroSection() {
                   <span className="text-xs font-heading font-bold uppercase tracking-wider text-brand-charcoal">DESIGN SUPPORT</span>
                 </div>
 
-                <div className="absolute bottom-20 sm:bottom-24 right-5 bg-brand-charcoal text-white px-3.5 py-2 rounded-full shadow-md flex items-center gap-2">
+                <div className="absolute bottom-5 right-5 bg-brand-charcoal text-white px-3.5 py-2 rounded-full shadow-md flex items-center gap-2">
                   <span className="text-xs font-heading font-bold uppercase tracking-wider text-brand-accent">BULK ORDERS</span>
                   <span className="text-[10px] text-white/80 font-normal">B2B Ready</span>
                 </div>
-              </div>
+              </Link>
             </div>
           </div>
         </div>
@@ -245,11 +229,14 @@ export default function HeroSection() {
             el: ".storefront-hero-pagination",
           }}
           autoplay={swiperAutoplay}
-          loop={slides.length > 1}
+          rewind={slides.length > 1}
           speed={700}
           grabCursor
           keyboard={{ enabled: true }}
           slidesPerView={1}
+          watchOverflow={true}
+          observer={true}
+          observeParents={true}
           className="storefront-hero-swiper"
         >
           {slides.map((slide) => {
@@ -265,10 +252,14 @@ export default function HeroSection() {
                 ? ((slide.product as { title?: string }).title ?? "Original design")
                 : "Original design";
 
-            const productPrice =
-              typeof slide.product === "object" && slide.product !== null
-                ? ((slide.product as { basePrice?: number }).basePrice ?? 0)
-                : 0;
+            const destinationHref = slide.productId
+              ? `/products/${slide.productId}`
+              : slide.primaryCta?.href && slide.primaryCta.href.trim() && slide.primaryCta.href !== "#"
+              ? slide.primaryCta.href.trim()
+              : null;
+
+            const imageAltText =
+              slide.image.altText?.trim() || productTitle || slide.badge || "Featured product showcase";
 
             return (
               <SwiperSlide key={slide._id} className="storefront-hero-slide">
@@ -298,45 +289,35 @@ export default function HeroSection() {
                   </div>
                 </div>
 
-                <div className="storefront-hero-visual" aria-label={slide.image.altText ?? slide.badge}>
-                  {slide.productId ? (
+                <div className="storefront-hero-visual" aria-label={imageAltText}>
+                  {destinationHref ? (
                     <Link
-                      className="hero-visual-card"
-                      href={`/products/${slide.productId}`}
-                      aria-label={`View ${productTitle}`}
+                      className="hero-visual-card hero-visual-card--interactive"
+                      href={destinationHref}
+                      aria-label={`View ${imageAltText}`}
                     >
                       <div className="hero-visual-image-wrap">
                         <Image
                           src={productImage}
-                          alt=""
+                          alt={imageAltText}
                           fill
                           sizes="(max-width: 768px) 100vw, 52vw"
                           priority={slide.sortOrder === 0}
                           className="hero-visual-image"
                         />
-                      </div>
-                      <div className="hero-product-card">
-                        <span className="hero-product-label">Featured product</span>
-                        <strong>{productTitle}</strong>
-                        <span>{formatPrice(productPrice)}</span>
                       </div>
                     </Link>
                   ) : (
-                    <div className="hero-visual-card">
+                    <div className="hero-visual-card hero-visual-card--static" aria-label={imageAltText}>
                       <div className="hero-visual-image-wrap">
                         <Image
                           src={productImage}
-                          alt={slide.image.altText ?? slide.badge}
+                          alt={imageAltText}
                           fill
                           sizes="(max-width: 768px) 100vw, 52vw"
                           priority={slide.sortOrder === 0}
                           className="hero-visual-image"
                         />
-                      </div>
-                      <div className="hero-product-card">
-                        <span className="hero-product-label">Featured product</span>
-                        <strong>{productTitle}</strong>
-                        <span>{formatPrice(productPrice)}</span>
                       </div>
                     </div>
                   )}

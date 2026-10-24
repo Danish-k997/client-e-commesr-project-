@@ -416,7 +416,7 @@ export default function HeroManagementPanel() {
                       <th>Hero</th>
                       <th>Status</th>
                       <th>Sort</th>
-                      <th>Product</th>
+                      <th>Destination</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -434,7 +434,21 @@ export default function HeroManagementPanel() {
                           <StatusBadge status={slide.status} />
                         </td>
                         <td>{slide.sortOrder}</td>
-                        <td>{slide.product ? getProductTitle(slide.product) : "None"}</td>
+                        <td>
+                          {slide.productId ? (
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "0.78rem" }}>
+                              <span>📦</span>
+                              <strong>{slide.product ? getProductTitle(slide.product) : "Product ID"}</strong>
+                            </span>
+                          ) : slide.primaryCta?.href && slide.primaryCta.href !== "#" ? (
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "0.78rem", color: "var(--text-muted)" }}>
+                              <span>🔗</span>
+                              <span>{slide.primaryCta.href}</span>
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: "0.76rem", color: "var(--text-muted)" }}>Static</span>
+                          )}
+                        </td>
                         <td>{renderActions(slide)}</td>
                       </tr>
                     ))}
@@ -601,6 +615,21 @@ export default function HeroManagementPanel() {
                   </button>
                 </div>
               )}
+            </div>
+
+            <div className="form-field" style={{ padding: "12px 14px", borderRadius: "10px", background: "rgba(204, 255, 0, 0.08)", border: "1px solid rgba(204, 255, 0, 0.3)" }}>
+              <span style={{ fontSize: "0.72rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", display: "block", marginBottom: "4px" }}>
+                Homepage Image Click Destination:
+              </span>
+              <strong style={{ fontSize: "0.85rem", color: "var(--text)" }}>
+                {form.productId ? (
+                  `🔗 Linked Product: ${productOptions.find((p) => p.id === form.productId)?.label || form.productId} (/products/${form.productId})`
+                ) : form.primaryCtaHref && form.primaryCtaHref.trim() && form.primaryCtaHref !== "#" ? (
+                  `🔗 Custom Page URL: ${form.primaryCtaHref.trim()}`
+                ) : (
+                  `🔒 Static Banner (Non-clickable)`
+                )}
+              </strong>
             </div>
 
             <div className="form-row-grid">
