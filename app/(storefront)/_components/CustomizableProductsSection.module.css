@@ -145,6 +145,17 @@
   }
 }
 
+@media (max-width: 380px) {
+  .customizable-section {
+    width: min(100% - 20px, 1440px);
+    margin-bottom: 36px;
+  }
+
+  .customizable-grid {
+    gap: 8px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .customizable-view-all-cta {
     transition: none;

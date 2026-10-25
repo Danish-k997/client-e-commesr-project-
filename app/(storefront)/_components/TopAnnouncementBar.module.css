@@ -1,0 +1,153 @@
+.topBar {
+  background: linear-gradient(90deg, #431383 0%, #551d9f 100%);
+  color: #ffffff;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.inner {
+  width: min(100% - 48px, 1440px);
+  margin-inline: auto;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-block: 6px;
+}
+
+.deliveryMessage {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.deliveryHighlight {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-shrink: 0;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 150ms ease, opacity 150ms ease;
+  padding: 4px 2px;
+  border-radius: 4px;
+}
+
+.link:hover {
+  color: #ccff00;
+}
+
+.link:focus-visible {
+  outline: 2px solid #ccff00;
+  outline-offset: 2px;
+}
+
+.icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.membershipLink {
+  background: rgba(255, 255, 255, 0.14);
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transition: all 160ms ease;
+}
+
+.membershipLink:hover {
+  background: #ccff00;
+  color: #18181b;
+  border-color: #ccff00;
+}
+
+.membershipBadge {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ccff00;
+}
+
+.membershipLink:hover .membershipBadge {
+  background: #18181b;
+}
+
+@media (max-width: 900px) {
+  .inner {
+    width: calc(100% - 32px);
+    gap: 12px;
+    font-size: 0.72rem;
+  }
+
+  .actions {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 640px) {
+  .inner {
+    width: calc(100% - 24px);
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    padding-block: 6px 8px;
+    text-align: center;
+  }
+
+  .deliveryMessage {
+    font-size: 0.7rem;
+    justify-content: center;
+  }
+
+  .actions {
+    width: 100%;
+    justify-content: center;
+    gap: 10px;
+    font-size: 0.68rem;
+    flex-wrap: wrap;
+  }
+
+  .membershipLink {
+    padding: 2px 8px;
+  }
+}
+
+@media (max-width: 360px) {
+  .inner {
+    padding-block: 5px;
+    gap: 4px;
+  }
+
+  .deliveryMessage {
+    font-size: 0.65rem;
+  }
+
+  .actions {
+    gap: 8px;
+    font-size: 0.65rem;
+  }
+
+  .phoneText {
+    display: none;
+  }
+}

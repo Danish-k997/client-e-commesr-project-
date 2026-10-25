@@ -3,7 +3,7 @@
 import crypto from "crypto";
 import mongoose from "mongoose";
 
-import { Order, PaymentTransaction, Product, ProductVariant } from "../models";
+import { Membership, Order, PaymentTransaction, Product, ProductVariant } from "../models";
 import { clearPurchasedCartItems } from "../api/cart/_service";
 import type {
   IOrderItem,
@@ -590,6 +590,9 @@ export type FinalizeOrderPaymentSuccessInput = {
   source: "BROWSER" | "WEBHOOK";
   userId?: string | null;
   transactionId?: string | null;
+  paymentAmount?: number | null; // in integer paise from gateway
+  paymentCurrency?: string | null; // currency code from gateway
+  paymentStatus?: string | null; // status from gateway e.g. "captured"
 };
 
 export type FinalizeOrderPaymentSuccessResult = {
@@ -604,11 +607,13 @@ export type FinalizeOrderPaymentSuccessResult = {
  * Shared, authoritative order payment finalization service.
  * Used by BOTH browser verification and asynchronous Razorpay webhooks.
  *
- * Invariants:
- * 1. Idempotency guard: If order is already paid, returns existing confirmed state without duplicating actions.
- * 2. Decrements product and variant stock strictly once (tracked via `order.isStockDecremented`).
- * 3. Clears only purchased items from cart if order source was "CART" (preserves cart for Buy Now).
- * 4. Marks PaymentTransaction as "SUCCESS" and Order as "CONFIRMED" + "PAID".
+ * Invariants (P0-A & P0-B):
+ * 1. Strict binding: PaymentTransaction MUST match razorpayOrderId and MUST belong to the target internal Order.
+ * 2. Amount & currency binding: Payment amount and currency MUST match internal order pricing authoritatively.
+ * 3. Payment ID uniqueness: The payment ID cannot be consumed if already used for another order or a membership.
+ * 4. Idempotency guard: If order is already paid with this payment, returns existing confirmed state without duplicating actions.
+ * 5. Decrements product and variant stock strictly once (tracked via `order.isStockDecremented`).
+ * 6. Concurrency safety: Handles duplicate key error (code 11000) gracefully during concurrent replays.
  */
 export async function finalizeOrderPaymentSuccess(
   input: FinalizeOrderPaymentSuccessInput
@@ -621,19 +626,32 @@ export async function finalizeOrderPaymentSuccess(
     signatureVerified = true,
     userId,
     transactionId,
+    paymentAmount,
+    paymentCurrency,
+    paymentStatus,
   } = input;
 
   const cleanOrderId = razorpayOrderId?.trim();
   const cleanPaymentId = razorpayPaymentId?.trim();
   const cleanSignature = razorpaySignature?.trim() || null;
 
-  // 1. Locate PaymentTransaction
+  if (!cleanOrderId || !cleanPaymentId) {
+    throw new ApiError(400, "Missing required Razorpay order ID or payment ID.");
+  }
+
+  // 1. Locate PaymentTransaction strictly bound to cleanOrderId
   let transaction: TransactionDoc | null = null;
 
   if (transactionId && mongoose.isValidObjectId(transactionId)) {
     const txQuery: Record<string, unknown> = { _id: transactionId };
     if (userId) txQuery.userId = userId;
     transaction = await PaymentTransaction.findOne(txQuery);
+    if (!transaction) {
+      throw new ApiError(404, "Payment transaction not found or unauthorized.");
+    }
+    if (transaction.razorpayOrderId && transaction.razorpayOrderId !== cleanOrderId) {
+      throw new ApiError(400, "Payment transaction Razorpay order mismatch.");
+    }
   }
 
   if (!transaction && cleanOrderId) {
@@ -642,42 +660,104 @@ export async function finalizeOrderPaymentSuccess(
     transaction = await PaymentTransaction.findOne(txQuery).sort({ attemptNumber: -1 });
   }
 
-  // 2. Locate internal Order
-  let order: OrderDoc | null = null;
-  const targetOrderId =
-    orderId && mongoose.isValidObjectId(orderId) ? orderId : transaction?.orderId;
-
-  if (targetOrderId) {
-    const orderQuery: Record<string, unknown> = { _id: targetOrderId };
-    if (userId) orderQuery.userId = userId;
-    order = await Order.findOne(orderQuery);
-  }
-
-  if (!order && orderId && typeof orderId === "string") {
-    const orderQuery: Record<string, unknown> = { orderNumber: orderId.trim() };
-    if (userId) orderQuery.userId = userId;
-    order = await Order.findOne(orderQuery);
-  }
-
-  if (!order) {
-    throw new ApiError(404, "Order not found or unauthorized.");
-  }
-
-  // If transaction wasn't found yet, locate latest by order._id
   if (!transaction) {
-    transaction = await PaymentTransaction.findOne({ orderId: order._id }).sort({ attemptNumber: -1 });
+    throw new ApiError(404, "No payment transaction found for this Razorpay order.");
+  }
+
+  // 2. Locate internal Order strictly via transaction.orderId
+  const order = await Order.findById(transaction.orderId);
+  if (!order) {
+    throw new ApiError(404, "Order not found for this payment transaction.");
+  }
+
+  // STRICT BINDING ENFORCEMENT (P0-A):
+  // If an orderId was passed, it MUST strictly match transaction.orderId!
+  if (orderId && mongoose.isValidObjectId(orderId)) {
+    if (order._id.toString() !== orderId.toString()) {
+      throw new ApiError(
+        400,
+        "Security violation: Specified order ID does not match the payment transaction order."
+      );
+    }
   }
 
   if (userId && order.userId.toString() !== userId.toString()) {
     throw new ApiError(403, "Unauthorized access to order.");
   }
 
-  // 3. IDEMPOTENCY GUARD:
+  // 3. Amount and currency validation (P0-A)
+  if (paymentAmount !== null && paymentAmount !== undefined) {
+    if (paymentAmount !== order.pricing.totalAmount) {
+      throw new ApiError(
+        400,
+        `Payment amount mismatch: Gateway amount (${paymentAmount}) does not match order amount (${order.pricing.totalAmount}).`
+      );
+    }
+  }
+
+  if (paymentCurrency !== null && paymentCurrency !== undefined) {
+    const expectedCurrency = order.currency || "INR";
+    if (paymentCurrency !== expectedCurrency) {
+      throw new ApiError(
+        400,
+        `Payment currency mismatch: Gateway currency (${paymentCurrency}) does not match expected (${expectedCurrency}).`
+      );
+    }
+  }
+
+  if (transaction.amount !== order.pricing.totalAmount) {
+    throw new ApiError(
+      400,
+      `Payment transaction amount (${transaction.amount}) does not match order total (${order.pricing.totalAmount}).`
+    );
+  }
+
+  if (paymentStatus && paymentStatus !== "captured" && paymentStatus !== "authorized") {
+    throw new ApiError(
+      400,
+      `Payment is not in captured status (received status: ${paymentStatus}).`
+    );
+  }
+
+  // 4. Cross-Order & Replay consumption check (P0-B):
+  // Check if this payment ID was already used for another order's SUCCESS transaction
+  const consumedInOtherOrder = await PaymentTransaction.findOne({
+    razorpayPaymentId: cleanPaymentId,
+    status: "SUCCESS",
+    orderId: { $ne: order._id },
+  });
+  if (consumedInOtherOrder) {
+    throw new ApiError(
+      409,
+      "Security violation: This Razorpay payment ID has already been utilized for another order."
+    );
+  }
+
+  // Check if this payment ID was already used for a membership purchase
+  const consumedInMembership = await Membership.findOne({
+    razorpayPaymentId: cleanPaymentId,
+    status: "ACTIVE",
+  });
+  if (consumedInMembership) {
+    throw new ApiError(
+      409,
+      "Security violation: This Razorpay payment ID was already utilized for a membership purchase."
+    );
+  }
+
+  // 5. IDEMPOTENCY GUARD:
   // If order is already confirmed and paid, return existing state without duplicate actions
   if (order.status === "CONFIRMED" && order.paymentStatus === "PAID") {
-    if (transaction && transaction.status !== "SUCCESS") {
+    if (transaction.razorpayPaymentId && transaction.razorpayPaymentId !== cleanPaymentId) {
+      throw new ApiError(
+        409,
+        "Order has already been paid with a different payment ID."
+      );
+    }
+
+    if (transaction.status !== "SUCCESS") {
       transaction.status = "SUCCESS";
-      if (cleanPaymentId) transaction.razorpayPaymentId = cleanPaymentId;
+      transaction.razorpayPaymentId = cleanPaymentId;
       if (cleanSignature) transaction.razorpaySignature = cleanSignature;
       transaction.signatureVerified = true;
       transaction.error = null;
@@ -688,27 +768,52 @@ export async function finalizeOrderPaymentSuccess(
       success: true,
       isAlreadyVerified: true,
       order: serializeOrder(order),
-      transaction: transaction ? serializePaymentTransaction(transaction) : null,
+      transaction: serializePaymentTransaction(transaction),
       message: "Payment already successfully verified.",
     };
   }
 
-  // 4. Update PaymentTransaction
-  if (transaction) {
-    transaction.status = "SUCCESS";
-    if (cleanPaymentId) transaction.razorpayPaymentId = cleanPaymentId;
-    if (cleanSignature) transaction.razorpaySignature = cleanSignature;
-    transaction.signatureVerified = Boolean(signatureVerified);
-    transaction.error = null;
+  // 6. Update PaymentTransaction with concurrency-safe duplicate key handling
+  transaction.status = "SUCCESS";
+  transaction.razorpayPaymentId = cleanPaymentId;
+  if (cleanSignature) transaction.razorpaySignature = cleanSignature;
+  transaction.signatureVerified = Boolean(signatureVerified);
+  transaction.error = null;
+
+  try {
     await transaction.save();
+  } catch (txErr: unknown) {
+    if (
+      typeof txErr === "object" &&
+      txErr !== null &&
+      "code" in txErr &&
+      (txErr as { code?: number }).code === 11000
+    ) {
+      // Concurrency collision on razorpayPaymentId unique index
+      const existingTx = await PaymentTransaction.findOne({ razorpayPaymentId: cleanPaymentId });
+      if (existingTx && existingTx.orderId.toString() === order._id.toString()) {
+        const reloadedOrder = await Order.findById(order._id);
+        return {
+          success: true,
+          isAlreadyVerified: true,
+          order: serializeOrder(reloadedOrder || order),
+          transaction: serializePaymentTransaction(existingTx),
+          message: "Payment already successfully verified.",
+        };
+      }
+      throw new ApiError(
+        409,
+        "Concurrent conflict: Payment ID was consumed by another transaction."
+      );
+    }
+    throw txErr;
   }
 
-  // 5. Update Order status
+  // 7. Update Order status
   order.status = "CONFIRMED";
   order.paymentStatus = "PAID";
 
-  // 6. Inventory / Stock decrement (strictly once, concurrency-safe)
-  // Atomically claim the decrement so concurrent browser & webhook calls cannot double-decrement
+  // 8. Inventory / Stock decrement (strictly once, concurrency-safe)
   const claimedOrder = await Order.findOneAndUpdate(
     {
       _id: order._id,
@@ -740,7 +845,7 @@ export async function finalizeOrderPaymentSuccess(
   order.isStockDecremented = true;
   await order.save();
 
-  // 7. Clear Cart if order source was CART
+  // 9. Clear Cart if order source was CART
   if (order.source === "CART") {
     await clearPurchasedCartItems(order.userId, order.items).catch(() => {});
   }
@@ -749,7 +854,7 @@ export async function finalizeOrderPaymentSuccess(
     success: true,
     isAlreadyVerified: false,
     order: serializeOrder(order),
-    transaction: transaction ? serializePaymentTransaction(transaction) : null,
+    transaction: serializePaymentTransaction(transaction),
     message: "Payment successfully verified and order confirmed.",
   };
 }
@@ -835,6 +940,12 @@ export type VerifyOrderPaymentResult = {
 /**
  * Server-authoritative cryptographic verification of Razorpay payment and idempotent order finalization.
  * Used for browser verification callback. Delegates to `finalizeOrderPaymentSuccess`.
+ *
+ * Invariants (P0-A & P0-B):
+ * 1. Strict binding: transaction MUST belong to the target order and match cleanOrderId.
+ * 2. Amount & currency: transaction amount and currency MUST match order pricing authoritatively.
+ * 3. Payment ID uniqueness: rejects any payment ID already consumed by another order or membership.
+ * 4. Idempotent: returns verified state if already paid with same payment ID.
  */
 export async function verifyAndFinalizeOrderPayment(
   userId: string,
@@ -867,7 +978,7 @@ export async function verifyAndFinalizeOrderPayment(
   const cleanPaymentId = razorpay_payment_id.trim();
   const cleanSignature = razorpay_signature.trim();
 
-  // 1. Locate PaymentTransaction
+  // 1. Locate PaymentTransaction strictly bound to cleanOrderId and userId
   let transaction: TransactionDoc | null = null;
 
   if (transactionId && mongoose.isValidObjectId(transactionId)) {
@@ -875,6 +986,12 @@ export async function verifyAndFinalizeOrderPayment(
       _id: transactionId,
       userId,
     });
+    if (!transaction) {
+      throw new ApiError(404, "Payment transaction not found or unauthorized.");
+    }
+    if (transaction.razorpayOrderId && transaction.razorpayOrderId !== cleanOrderId) {
+      throw new ApiError(400, "Payment transaction Razorpay order mismatch.");
+    }
   }
 
   if (!transaction) {
@@ -884,34 +1001,92 @@ export async function verifyAndFinalizeOrderPayment(
     }).sort({ attemptNumber: -1 });
   }
 
-  // 2. Locate internal Order
+  if (!transaction) {
+    throw new ApiError(404, "No matching payment transaction found for this Razorpay order.");
+  }
+
+  // 2. Locate internal Order strictly via transaction.orderId
   const targetOrderId =
-    orderId && mongoose.isValidObjectId(orderId) ? orderId : transaction?.orderId;
+    orderId && mongoose.isValidObjectId(orderId) ? orderId : transaction.orderId;
 
-  const order = targetOrderId
-    ? await Order.findOne({ _id: targetOrderId, userId })
-    : null;
+  // STRICT BINDING VALIDATION (P0-A):
+  // The transaction MUST belong to this exact order!
+  if (transaction.orderId.toString() !== targetOrderId.toString()) {
+    throw new ApiError(
+      400,
+      "Security violation: Payment transaction does not belong to the specified order."
+    );
+  }
 
+  const order = await Order.findOne({ _id: targetOrderId, userId });
   if (!order) {
     throw new ApiError(404, "Order not found or unauthorized.");
   }
 
-  // 3. IDEMPOTENCY GUARD:
-  // If order is already confirmed and paid (e.g. by webhook that arrived first!), return existing result immediately
-  if (
-    order.status === "CONFIRMED" &&
-    order.paymentStatus === "PAID"
-  ) {
+  // 3. Amount and Currency Binding Check (P0-A):
+  if (transaction.amount !== order.pricing.totalAmount) {
+    throw new ApiError(
+      400,
+      `Payment amount mismatch: Expected ${order.pricing.totalAmount} paise, transaction recorded ${transaction.amount} paise.`
+    );
+  }
+
+  const expectedCurrency = order.currency || "INR";
+  if (transaction.currency !== expectedCurrency) {
+    throw new ApiError(
+      400,
+      `Payment currency mismatch: Expected ${expectedCurrency}, transaction recorded ${transaction.currency}.`
+    );
+  }
+
+  // 4. Order State Check:
+  if (order.status === "CANCELLED") {
+    throw new ApiError(400, "Cannot complete payment: Order has been cancelled.");
+  }
+
+  // 5. Cross-Order / Cross-Purchase Payment Consumption Check (P0-B):
+  const consumedInAnotherOrder = await PaymentTransaction.findOne({
+    razorpayPaymentId: cleanPaymentId,
+    status: "SUCCESS",
+    orderId: { $ne: order._id },
+  });
+  if (consumedInAnotherOrder) {
+    throw new ApiError(
+      409,
+      "Security violation: This Razorpay payment ID has already been utilized for another order."
+    );
+  }
+
+  const consumedInMembership = await Membership.findOne({
+    razorpayPaymentId: cleanPaymentId,
+    status: "ACTIVE",
+  });
+  if (consumedInMembership) {
+    throw new ApiError(
+      409,
+      "Security violation: This Razorpay payment ID was already utilized for a membership purchase."
+    );
+  }
+
+  // 6. IDEMPOTENCY GUARD:
+  // If order is already confirmed and paid, return existing result immediately
+  if (order.status === "CONFIRMED" && order.paymentStatus === "PAID") {
+    if (transaction.razorpayPaymentId && transaction.razorpayPaymentId !== cleanPaymentId) {
+      throw new ApiError(
+        409,
+        "Order has already been paid with a different payment ID."
+      );
+    }
     return {
       success: true,
       isAlreadyVerified: true,
       order: serializeOrder(order),
-      transaction: transaction ? serializePaymentTransaction(transaction) : null,
+      transaction: serializePaymentTransaction(transaction),
       message: "Payment already successfully verified.",
     };
   }
 
-  // 4. Cryptographic signature verification using server secret
+  // 7. Cryptographic signature verification using server secret
   const keySecret = process.env.RAZORPAY_KEY_SECRET;
   if (!keySecret) {
     throw new ApiError(500, "Razorpay credentials are not configured on the server.");
@@ -930,25 +1105,23 @@ export async function verifyAndFinalizeOrderPayment(
     );
 
   if (!isSignatureValid) {
-    if (transaction) {
-      transaction.status = "FAILED";
-      transaction.razorpayPaymentId = cleanPaymentId;
-      transaction.razorpaySignature = cleanSignature;
-      transaction.signatureVerified = false;
-      transaction.error = {
-        code: "INVALID_SIGNATURE",
-        description: "Cryptographic payment signature mismatch.",
-        source: "verification",
-        step: "verify_signature",
-      };
-      await transaction.save();
-    }
+    transaction.status = "FAILED";
+    transaction.razorpayPaymentId = cleanPaymentId;
+    transaction.razorpaySignature = cleanSignature;
+    transaction.signatureVerified = false;
+    transaction.error = {
+      code: "INVALID_SIGNATURE",
+      description: "Cryptographic payment signature mismatch.",
+      source: "verification",
+      step: "verify_signature",
+    };
+    await transaction.save();
 
     throw new ApiError(400, "Invalid payment signature. Verification failed.");
   }
 
-  // 5. Delegate to shared finalization service
-  const result = await finalizeOrderPaymentSuccess({
+  // 8. Delegate to shared authoritative finalization service
+  return finalizeOrderPaymentSuccess({
     orderId: order._id.toString(),
     razorpayOrderId: cleanOrderId,
     razorpayPaymentId: cleanPaymentId,
@@ -956,10 +1129,10 @@ export async function verifyAndFinalizeOrderPayment(
     signatureVerified: true,
     source: "BROWSER",
     userId,
-    transactionId: transaction?._id.toString(),
+    transactionId: transaction._id.toString(),
+    paymentAmount: transaction.amount,
+    paymentCurrency: transaction.currency,
   });
-
-  return result as VerifyOrderPaymentResult;
 }
 
 

@@ -1,8 +1,16 @@
-export const WHATSAPP_NUMBER = "8102888865";
+export const WHATSAPP_NUMBER =
+  process.env.NEXT_PUBLIC_CONTACT_PHONE || "8102888865";
 
-export const WHATSAPP_URL = `https://wa.me/91${WHATSAPP_NUMBER}`;
+const cleanNumber = WHATSAPP_NUMBER.replace(/\D/g, "");
 
-export const CONTACT_PHONE_URL = `tel:+91${WHATSAPP_NUMBER}`;
+export const FORMATTED_PHONE =
+  cleanNumber.length === 10
+    ? `+91 ${cleanNumber.slice(0, 5)} ${cleanNumber.slice(5)}`
+    : `+91 ${cleanNumber}`;
+
+export const WHATSAPP_URL = `https://wa.me/91${cleanNumber}`;
+
+export const CONTACT_PHONE_URL = `tel:+91${cleanNumber}`;
 
 export const INSTAGRAM_HANDLE = "kasar.dimensions";
 

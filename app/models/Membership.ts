@@ -83,6 +83,7 @@ const MembershipSchema = new mongoose.Schema<IMembership>(
 MembershipSchema.index({ userId: 1, expiresAt: -1 });
 MembershipSchema.index({ userId: 1, status: 1 });
 MembershipSchema.index({ razorpayOrderId: 1 }, { sparse: true });
+MembershipSchema.index({ razorpayPaymentId: 1 }, { unique: true, sparse: true });
 
 const Membership: Model<IMembership> =
   mongoose.models.Membership || mongoose.model<IMembership>("Membership", MembershipSchema);

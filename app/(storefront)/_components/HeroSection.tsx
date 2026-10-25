@@ -119,7 +119,7 @@ export default function HeroSection() {
                 <span>Additive Manufacturing Studio</span>
               </div>
 
-              <h1 className="font-heading font-extrabold text-5xl sm:text-6xl xl:text-7xl leading-[0.98] tracking-tight text-brand-charcoal mb-6">
+              <h1 className="font-heading font-extrabold text-4xl sm:text-6xl xl:text-7xl leading-[0.98] tracking-tight text-brand-charcoal mb-6">
                 FROM<br />
                 CONCEPT<br />
                 <span className="inline-block relative">

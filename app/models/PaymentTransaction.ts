@@ -101,7 +101,6 @@ const PaymentTransactionSchema = new mongoose.Schema<IPaymentTransaction>(
       type: String,
       trim: true,
       default: null,
-      index: true,
     },
     razorpaySignature: {
       type: String,
@@ -128,6 +127,7 @@ const PaymentTransactionSchema = new mongoose.Schema<IPaymentTransaction>(
 
 PaymentTransactionSchema.index({ orderId: 1, attemptNumber: 1 });
 PaymentTransactionSchema.index({ userId: 1, createdAt: -1 });
+PaymentTransactionSchema.index({ razorpayPaymentId: 1 }, { unique: true, sparse: true });
 
 const PaymentTransaction: Model<IPaymentTransaction> =
   mongoose.models.PaymentTransaction ||

@@ -4,16 +4,18 @@ import crypto from "crypto";
 import mongoose from "mongoose";
 import { NextResponse } from "next/server";
 import { connectDB } from "../../../lib/db";
-import { WebhookEvent } from "../../../models";
+import { WebhookEvent, Membership, PaymentTransaction } from "../../../models";
 import {
   finalizeOrderPaymentSuccess,
   recordOrderPaymentFailure,
 } from "../../../lib/orderCreation";
+import { finalizeMembershipPaymentSuccess } from "../../../lib/membership";
 
 interface RazorpayPaymentEntity {
   id?: string;
   order_id?: string;
   amount?: number;
+  currency?: string;
   status?: string;
   error_code?: string;
   error_description?: string;
@@ -30,6 +32,7 @@ interface RazorpayPaymentEntity {
 interface RazorpayOrderEntity {
   id?: string;
   amount?: number;
+  currency?: string;
   status?: string;
   notes?: {
     orderId?: string;
@@ -53,6 +56,8 @@ interface RazorpayWebhookPayload {
 }
 
 export async function POST(request: Request) {
+  let webhookEventDoc: InstanceType<typeof WebhookEvent> | null = null;
+
   try {
     const signature = request.headers.get("x-razorpay-signature");
     if (!signature) {
@@ -147,7 +152,7 @@ export async function POST(request: Request) {
     }
 
     // Record event as PROCESSING if not already existing
-    let webhookEventDoc = existingEvent;
+    webhookEventDoc = existingEvent;
     if (!webhookEventDoc) {
       try {
         webhookEventDoc = await WebhookEvent.create({
@@ -178,65 +183,172 @@ export async function POST(request: Request) {
     // 7. Route and handle specific required events
     if (eventName === "payment.captured" || eventName === "order.paid") {
       if (!rzpOrderId) {
-        webhookEventDoc.status = "FAILED";
-        webhookEventDoc.error = "Missing razorpay order identifier in captured payment event.";
-        await webhookEventDoc.save();
+        if (webhookEventDoc) {
+          webhookEventDoc.status = "FAILED";
+          webhookEventDoc.error = "Missing razorpay order identifier in captured payment event.";
+          await webhookEventDoc.save();
+        }
         return NextResponse.json(
           { error: "Missing order reference in event payload" },
           { status: 400 }
         );
       }
 
-      const result = await finalizeOrderPaymentSuccess({
-        orderId: internalOrderId,
-        razorpayOrderId: rzpOrderId,
-        razorpayPaymentId: rzpPaymentId || "",
-        signatureVerified: true,
-        source: "WEBHOOK",
-      });
+      // P0-C: Determine purchase type using trusted stored records and consistent order associations
+      const membershipDoc = await Membership.findOne({ razorpayOrderId: rzpOrderId });
+      const transactionDoc = !membershipDoc
+        ? await PaymentTransaction.findOne({ razorpayOrderId: rzpOrderId })
+        : null;
 
-      webhookEventDoc.status = "PROCESSED";
-      if (result.order?._id && mongoose.isValidObjectId(result.order._id)) {
-        webhookEventDoc.orderId = new mongoose.Types.ObjectId(result.order._id);
+      if (membershipDoc) {
+        // Authoritative Membership Payment Finalization
+        // Verify expected currency against stored membership purchase (strictly INR)
+        const expectedCurrency = "INR";
+        const incomingCurrency = paymentEntity?.currency ?? orderEntity?.currency ?? expectedCurrency;
+
+        if (paymentEntity?.currency && paymentEntity.currency !== expectedCurrency) {
+          if (webhookEventDoc) {
+            webhookEventDoc.status = "FAILED";
+            webhookEventDoc.error = `Membership currency mismatch: Received ${paymentEntity.currency}, expected ${expectedCurrency}.`;
+            await webhookEventDoc.save();
+          }
+          return NextResponse.json(
+            { error: `Membership currency mismatch: Received ${paymentEntity.currency}, expected ${expectedCurrency}.` },
+            { status: 400 }
+          );
+        }
+
+        const memResult = await finalizeMembershipPaymentSuccess({
+          razorpayOrderId: rzpOrderId,
+          razorpayPaymentId: rzpPaymentId || "",
+          source: "WEBHOOK",
+          paymentAmount: paymentEntity?.amount ?? orderEntity?.amount,
+          paymentCurrency: incomingCurrency,
+          paymentStatus: paymentEntity?.status,
+        });
+
+        if (webhookEventDoc) {
+          webhookEventDoc.status = "PROCESSED";
+          webhookEventDoc.metadata = {
+            type: "MEMBERSHIP",
+            membershipId: memResult.membership.id,
+            isAlreadyVerified: memResult.isAlreadyVerified,
+          };
+          await webhookEventDoc.save();
+        }
+
+        return NextResponse.json(
+          {
+            received: true,
+            event: eventName,
+            type: "MEMBERSHIP",
+            membershipId: memResult.membership.id,
+            isAlreadyVerified: memResult.isAlreadyVerified,
+          },
+          { status: 200 }
+        );
+      } else if (transactionDoc) {
+        // Authoritative Product Order Payment Finalization
+        // Verify expected currency against trusted stored transaction
+        const expectedCurrency = transactionDoc.currency || "INR";
+        const incomingCurrency = paymentEntity?.currency ?? orderEntity?.currency ?? expectedCurrency;
+
+        if (paymentEntity?.currency && paymentEntity.currency !== expectedCurrency) {
+          if (webhookEventDoc) {
+            webhookEventDoc.status = "FAILED";
+            webhookEventDoc.error = `Order currency mismatch: Received ${paymentEntity.currency}, expected ${expectedCurrency}.`;
+            await webhookEventDoc.save();
+          }
+          return NextResponse.json(
+            { error: `Order currency mismatch: Received ${paymentEntity.currency}, expected ${expectedCurrency}.` },
+            { status: 400 }
+          );
+        }
+
+        const result = await finalizeOrderPaymentSuccess({
+          orderId: internalOrderId || transactionDoc.orderId.toString(),
+          razorpayOrderId: rzpOrderId,
+          razorpayPaymentId: rzpPaymentId || "",
+          signatureVerified: true,
+          source: "WEBHOOK",
+          paymentAmount: paymentEntity?.amount ?? orderEntity?.amount,
+          paymentCurrency: incomingCurrency,
+          paymentStatus: paymentEntity?.status,
+        });
+
+        if (webhookEventDoc) {
+          webhookEventDoc.status = "PROCESSED";
+          if (result.order?._id && mongoose.isValidObjectId(result.order._id)) {
+            webhookEventDoc.orderId = new mongoose.Types.ObjectId(result.order._id);
+          }
+          await webhookEventDoc.save();
+        }
+
+        return NextResponse.json(
+          {
+            received: true,
+            event: eventName,
+            type: "PRODUCT_ORDER",
+            orderNumber: result.order.orderNumber,
+            isAlreadyVerified: result.isAlreadyVerified,
+          },
+          { status: 200 }
+        );
+      } else {
+        // Unmapped event: neither Membership nor Product Order matches this rzpOrderId in the DB
+        if (webhookEventDoc) {
+          webhookEventDoc.status = "FAILED";
+          webhookEventDoc.error = `Unmapped purchase: Razorpay order ${rzpOrderId} not found in database records.`;
+          await webhookEventDoc.save();
+        }
+
+        // Acknowledge unmapped event safely to avoid endless blind retries
+        return NextResponse.json(
+          {
+            received: true,
+            unmapped: true,
+            message: "Razorpay order identifier does not match any internal order or membership.",
+          },
+          { status: 200 }
+        );
       }
-      await webhookEventDoc.save();
-
-      return NextResponse.json(
-        {
-          received: true,
-          event: eventName,
-          orderNumber: result.order.orderNumber,
-          isAlreadyVerified: result.isAlreadyVerified,
-        },
-        { status: 200 }
-      );
     } else if (eventName === "payment.failed") {
-      await recordOrderPaymentFailure({
-        orderId: internalOrderId,
-        razorpayOrderId: rzpOrderId,
-        razorpayPaymentId: rzpPaymentId,
-        error: paymentEntity?.error_code
-          ? {
-              code: paymentEntity.error_code,
-              description: paymentEntity.error_description,
-              source: paymentEntity.error_source,
-              step: paymentEntity.error_step,
-              reason: paymentEntity.error_reason,
-            }
-          : null,
-      });
+      const isProductOrder = rzpOrderId
+        ? await PaymentTransaction.exists({ razorpayOrderId: rzpOrderId })
+        : false;
 
-      webhookEventDoc.status = "PROCESSED";
-      await webhookEventDoc.save();
+      if (isProductOrder) {
+        await recordOrderPaymentFailure({
+          orderId: internalOrderId,
+          razorpayOrderId: rzpOrderId,
+          razorpayPaymentId: rzpPaymentId,
+          error: paymentEntity?.error_code
+            ? {
+                code: paymentEntity.error_code,
+                description: paymentEntity.error_description,
+                source: paymentEntity.error_source,
+                step: paymentEntity.error_step,
+                reason: paymentEntity.error_reason,
+              }
+            : null,
+        });
+      }
+
+      if (webhookEventDoc) {
+        webhookEventDoc.status = "PROCESSED";
+        await webhookEventDoc.save();
+      }
 
       return NextResponse.json(
-        { received: true, event: eventName, recorded: true },
+        { received: true, event: eventName, recorded: Boolean(isProductOrder) },
         { status: 200 }
       );
     } else {
       // Safe ignore for other events
-      webhookEventDoc.status = "IGNORED";
-      await webhookEventDoc.save();
+      if (webhookEventDoc) {
+        webhookEventDoc.status = "IGNORED";
+        await webhookEventDoc.save();
+      }
 
       return NextResponse.json(
         { received: true, event: eventName, ignored: true },
@@ -246,6 +358,20 @@ export async function POST(request: Request) {
   } catch (error: unknown) {
     const errorMsg = error instanceof Error ? error.message : "Internal server error processing webhook";
     console.error("Razorpay webhook error:", errorMsg);
+
+    try {
+      if (webhookEventDoc && webhookEventDoc.status === "PROCESSING") {
+        webhookEventDoc.status = "FAILED";
+        webhookEventDoc.error = errorMsg;
+        await webhookEventDoc.save();
+      }
+    } catch (saveError: unknown) {
+      console.error(
+        "Failed to update WebhookEvent to FAILED status:",
+        saveError instanceof Error ? saveError.message : saveError
+      );
+    }
+
     return NextResponse.json(
       { error: errorMsg },
       { status: 500 }

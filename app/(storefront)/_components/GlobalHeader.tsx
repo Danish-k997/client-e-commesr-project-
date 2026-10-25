@@ -2,12 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import type { KeyboardEvent as ReactKeyboardEvent } from "react";
+import type { FormEvent, KeyboardEvent as ReactKeyboardEvent } from "react";
 import { createAuthClient } from "better-auth/react";
 
 import { getCartItemCount, useCart, useCategories } from "../../lib/api";
 import { getApplicationRole } from "../../lib/roles";
+import TopAnnouncementBar from "./TopAnnouncementBar";
 
 const authClient = createAuthClient();
 
@@ -66,10 +68,18 @@ function UserIcon() {
 }
 
 export default function GlobalHeader({ isAdmin: initialIsAdmin }: GlobalHeaderProps) {
+  const router = useRouter();
   const [clientIsAdmin, setClientIsAdmin] = useState<boolean | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [isMobileCategoriesOpen, setIsMobileCategoriesOpen] = useState(false);
+
+  // Search interface states
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchButtonRef = useRef<HTMLButtonElement>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
 
   const isAdmin = clientIsAdmin ?? initialIsAdmin;
 
@@ -147,6 +157,41 @@ export default function GlobalHeader({ isAdmin: initialIsAdmin }: GlobalHeaderPr
     };
   }, [isCategoriesOpen]);
 
+  // Handle outside click and escape for search dropdown
+  useEffect(() => {
+    if (!isSearchOpen) {
+      return;
+    }
+
+    function handlePointerDown(event: MouseEvent | TouchEvent) {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target as Node) &&
+        searchButtonRef.current &&
+        !searchButtonRef.current.contains(event.target as Node)
+      ) {
+        setIsSearchOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsSearchOpen(false);
+        searchButtonRef.current?.focus();
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("touchstart", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("touchstart", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isSearchOpen]);
+
   // Lock scroll and handle escape key for mobile menu
   useEffect(() => {
     if (!isMenuOpen) {
@@ -207,8 +252,21 @@ export default function GlobalHeader({ isAdmin: initialIsAdmin }: GlobalHeaderPr
     }
   }
 
+  function handleSearchSubmit(event: FormEvent) {
+    event.preventDefault();
+    const query = searchQuery.trim();
+    setIsSearchOpen(false);
+    setIsMenuOpen(false);
+    if (query) {
+      router.push(`/shop?search=${encodeURIComponent(query)}`);
+    } else {
+      router.push("/shop");
+    }
+  }
+
   return (
     <header className="site-header">
+      <TopAnnouncementBar />
       <a href="#main-content" className="skip-to-content">
         Skip to main content
       </a>
@@ -291,10 +349,26 @@ export default function GlobalHeader({ isAdmin: initialIsAdmin }: GlobalHeaderPr
         </nav>
 
         <div className="site-header-actions">
-          <Link className="site-icon-button" href="/shop" aria-label="Search collection">
+          {/* Search Button (Accessible on Mobile and Desktop) */}
+          <button
+            ref={searchButtonRef}
+            className="site-icon-button"
+            type="button"
+            aria-label={isSearchOpen ? "Close search bar" : "Open product search"}
+            aria-expanded={isSearchOpen}
+            aria-controls="header-search-bar"
+            onClick={() => {
+              setIsSearchOpen((open) => !open);
+              if (!isSearchOpen) {
+                setTimeout(() => searchInputRef.current?.focus(), 60);
+              }
+            }}
+          >
             <SearchIcon />
-          </Link>
-          <Link className="site-icon-button site-cart-button" href="/cart" aria-label={cartLabel}>
+          </button>
+
+          {/* Cart Button */}
+          <Link className="site-icon-button site-cart-button" href="/cart" aria-label={cartLabel} onClick={closeMenu}>
             <BagIcon />
             {cartCount > 0 && (
               <span className="site-cart-badge" aria-hidden="true">
@@ -302,22 +376,31 @@ export default function GlobalHeader({ isAdmin: initialIsAdmin }: GlobalHeaderPr
               </span>
             )}
           </Link>
-          <Link className="site-icon-button" href="/account" aria-label="Customer account">
+
+          {/* Customer Account Button */}
+          <Link className="site-icon-button" href="/account" aria-label="Customer account" onClick={closeMenu}>
             <UserIcon />
           </Link>
+
+          {/* Admin Dashboard Pill */}
           {isAdmin && (
             <Link
               className="site-dashboard-pill"
               href="/admin/dashboard"
               aria-label="Admin Dashboard"
+              onClick={closeMenu}
             >
               <span className="site-dashboard-dot" aria-hidden="true" />
               <span>Dashboard</span>
             </Link>
           )}
-          <Link className="site-primary-cta" href="/shop?customizable=true">
+
+          {/* Desktop Primary CTA */}
+          <Link className="site-primary-cta" href="/shop?customizable=true" onClick={closeMenu}>
             Customize now
           </Link>
+
+          {/* Mobile Menu Hamburger */}
           <button
             ref={menuButtonRef}
             className="site-menu-button"
@@ -332,6 +415,55 @@ export default function GlobalHeader({ isAdmin: initialIsAdmin }: GlobalHeaderPr
         </div>
       </div>
 
+      {/* Expandable Responsive Search Bar */}
+      {isSearchOpen && (
+        <div
+          id="header-search-bar"
+          ref={searchContainerRef}
+          className="site-header-search-bar"
+          role="region"
+          aria-label="Quick product search"
+        >
+          <form className="site-header-search-form" onSubmit={handleSearchSubmit}>
+            <SearchIcon />
+            <input
+              ref={searchInputRef}
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search custom 3D prints, keyrings, decor..."
+              className="site-header-search-input"
+              aria-label="Search products"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery("");
+                  searchInputRef.current?.focus();
+                }}
+                className="site-header-search-clear"
+                aria-label="Clear search input"
+              >
+                ✕
+              </button>
+            )}
+            <button type="submit" className="site-header-search-submit">
+              Search
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsSearchOpen(false)}
+              className="site-header-search-close"
+              aria-label="Close search"
+            >
+              Close
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* Mobile Drawer Navigation */}
       <nav
         ref={menuRef}
         id="mobile-navigation"
@@ -340,9 +472,27 @@ export default function GlobalHeader({ isAdmin: initialIsAdmin }: GlobalHeaderPr
         aria-hidden={!isMenuOpen}
         inert={!isMenuOpen}
       >
+        {/* Quick Search within Mobile Drawer */}
+        <div className="site-mobile-nav-search">
+          <form onSubmit={handleSearchSubmit} className="site-mobile-search-form">
+            <SearchIcon />
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search products..."
+              className="site-mobile-search-input"
+              aria-label="Search products in navigation drawer"
+            />
+            <button type="submit" className="site-mobile-search-btn">
+              Go
+            </button>
+          </form>
+        </div>
+
         <div className="site-mobile-nav-links">
           <Link href="/" onClick={closeMenu}>Home</Link>
-          <Link href="/shop" onClick={closeMenu}>Shop</Link>
+          <Link href="/shop" onClick={closeMenu}>Shop All Products</Link>
 
           <div className="site-mobile-category-group">
             <button
@@ -379,12 +529,14 @@ export default function GlobalHeader({ isAdmin: initialIsAdmin }: GlobalHeaderPr
           </div>
 
           <Link href="/custom-request" onClick={closeMenu} className="site-mobile-custom-link">
-            <span>Custom Order</span>
+            <span>Custom 3D Print Request</span>
             <span className="site-nav-dot" aria-hidden="true" />
           </Link>
           <Link href="/#bestsellers" onClick={closeMenu}>Bestsellers</Link>
-          <Link href="/membership" onClick={closeMenu}>Membership</Link>
-          <Link href="/account" onClick={closeMenu}>My Account & Addresses</Link>
+          <Link href="/membership" onClick={closeMenu} className="site-mobile-membership-link">
+            <span>Become a Member (₹99)</span>
+          </Link>
+          <Link href="/account" onClick={closeMenu}>My Account & Orders</Link>
           {isAdmin && (
             <Link className="site-mobile-dashboard" href="/admin/dashboard" onClick={closeMenu}>
               <span className="site-mobile-dashboard-badge">ADMIN</span>
