@@ -31,6 +31,34 @@
   color: #ffffff;
 }
 
+.festivalGreeting {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.festivalSymbol {
+  font-size: 0.95rem;
+  line-height: 1;
+  display: inline-block;
+}
+
+.festivalText {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.dotSeparator {
+  opacity: 0.6;
+}
+
+.deliverySubtext {
+  opacity: 0.9;
+  font-weight: 500;
+}
+
 .actions {
   display: flex;
   align-items: center;
@@ -119,6 +147,13 @@
     justify-content: center;
   }
 
+  .festivalGreeting {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+    font-size: 0.68rem;
+  }
+
   .actions {
     width: 100%;
     justify-content: center;
@@ -140,6 +175,11 @@
 
   .deliveryMessage {
     font-size: 0.65rem;
+  }
+
+  .deliverySubtext,
+  .dotSeparator {
+    display: none;
   }
 
   .actions {

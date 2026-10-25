@@ -33,6 +33,11 @@ const adminNavigation = [
     description: "Homepage slides",
   },
   {
+    label: "Festival Themes",
+    href: "/admin/festival-themes",
+    description: "Festive presets & schedule",
+  },
+  {
     label: "Products",
     href: "/admin/products",
     description: "Catalog records",

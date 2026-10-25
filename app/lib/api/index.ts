@@ -9,5 +9,6 @@ export * from "./admin-orders";
 export * from "./customization";
 export * from "./customRequests";
 export * from "./hero";
+export * from "./festivals";
 export * from "./products";
 export type { ApiErrorResponse, ApiRequestOptions, ApiResponse, ApiSuccessResponse } from "./types";

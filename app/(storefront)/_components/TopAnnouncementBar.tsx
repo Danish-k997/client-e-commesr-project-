@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { CONTACT_PHONE_URL, FORMATTED_PHONE, WHATSAPP_URL } from "../../lib/contact";
+import { useFestivalTheme } from "./FestivalThemeProvider";
 import styles from "./TopAnnouncementBar.module.css";
 
 function PhoneIcon() {
@@ -56,11 +57,31 @@ function StarIcon() {
 }
 
 export default function TopAnnouncementBar() {
+  const festivalTheme = useFestivalTheme();
+  const isFestivalActive = Boolean(
+    festivalTheme?.isActive &&
+      festivalTheme.showAnnouncement &&
+      festivalTheme.announcementText?.trim()
+  );
+
   return (
     <aside className={styles.topBar} aria-label="Announcement & Quick Contacts">
       <div className={styles.inner}>
         <div className={styles.deliveryMessage}>
-          <span>Fast pan-India delivery 🇮🇳 · Custom 3D prints made to order</span>
+          {isFestivalActive ? (
+            <div className={styles.festivalGreeting}>
+              <span className={styles.festivalSymbol} aria-hidden="true">
+                {festivalTheme?.symbol}
+              </span>
+              <span className={styles.festivalText}>{festivalTheme?.announcementText}</span>
+              <span className={styles.dotSeparator} aria-hidden="true">
+                ·
+              </span>
+              <span className={styles.deliverySubtext}>Pan-India delivery 🇮🇳</span>
+            </div>
+          ) : (
+            <span>Fast pan-India delivery 🇮🇳 · Custom 3D prints made to order</span>
+          )}
         </div>
 
         <div className={styles.actions}>

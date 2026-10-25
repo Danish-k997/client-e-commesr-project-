@@ -6,6 +6,7 @@ import FloatingWhatsAppButton from "./_components/FloatingWhatsAppButton";
 import GlobalHeader from "./_components/GlobalHeader";
 import MobileBottomDock from "./_components/MobileBottomDock";
 import SiteFooter from "./_components/SiteFooter";
+import FestivalThemeProvider from "./_components/FestivalThemeProvider";
 
 async function getIsAdmin() {
   try {
@@ -26,17 +27,19 @@ export default async function StorefrontLayout({
   const isAdmin = await getIsAdmin();
 
   return (
-    <div className="site-shell">
-      <GlobalHeader isAdmin={isAdmin} />
-      <main
-        id="main-content"
-        className="site-main pb-[max(5rem,calc(4.5rem+env(safe-area-inset-bottom)))] md:pb-0"
-      >
-        {children}
-      </main>
-      <SiteFooter />
-      <MobileBottomDock />
-      <FloatingWhatsAppButton />
-    </div>
+    <FestivalThemeProvider>
+      <div className="site-shell">
+        <GlobalHeader isAdmin={isAdmin} />
+        <main
+          id="main-content"
+          className="site-main pb-[max(5rem,calc(4.5rem+env(safe-area-inset-bottom)))] md:pb-0"
+        >
+          {children}
+        </main>
+        <SiteFooter />
+        <MobileBottomDock />
+        <FloatingWhatsAppButton />
+      </div>
+    </FestivalThemeProvider>
   );
 }

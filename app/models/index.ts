@@ -87,3 +87,16 @@ export { default as WebhookEvent } from "./WebhookEvent";
 export { WEBHOOK_STATUSES } from "./WebhookEvent";
 export type { IWebhookEvent, WebhookStatus } from "./WebhookEvent";
 
+
+export { default as FestivalTheme } from "./FestivalTheme";
+export {
+  FESTIVAL_PRESETS,
+  THEME_STATUSES,
+  THEME_INTENSITIES,
+} from "./FestivalTheme";
+export type {
+  IFestivalTheme,
+  FestivalPreset,
+  ThemeStatus,
+  ThemeIntensity,
+} from "./FestivalTheme";
