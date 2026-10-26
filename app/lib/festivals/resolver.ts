@@ -14,6 +14,7 @@ export interface ActiveFestivalThemePayload {
   enableDecorations: boolean;
   enableAnimations: boolean;
   symbol: string;
+  motifName?: string | null;
   cssVariables: Record<string, string>;
   startDateIso?: string;
   endDateIso?: string;
@@ -30,6 +31,7 @@ export const DEFAULT_THEME_PAYLOAD: ActiveFestivalThemePayload = {
   enableDecorations: false,
   enableAnimations: false,
   symbol: "▲",
+  motifName: null,
   cssVariables: getFestivalCssVariables("DEFAULT"),
 };
 
@@ -88,6 +90,7 @@ export async function getActiveFestivalTheme(nowUtc: Date = new Date()): Promise
       enableDecorations: Boolean(chosen.enableDecorations),
       enableAnimations: Boolean(chosen.enableAnimations),
       symbol: meta.symbol,
+      motifName: meta.motifName,
       cssVariables: getFestivalCssVariables(chosen.preset, chosen.intensity, chosen.customAccentColor),
       startDateIso: new Date(chosen.startDate).toISOString(),
       endDateIso: new Date(chosen.endDate).toISOString(),

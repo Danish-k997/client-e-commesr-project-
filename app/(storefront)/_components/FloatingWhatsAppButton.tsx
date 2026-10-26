@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { WHATSAPP_URL } from "../../lib/contact";
+import { useFestivalTheme } from "./FestivalThemeProvider";
 
 function WhatsAppGlyph() {
   return (
@@ -19,12 +20,15 @@ function WhatsAppGlyph() {
 export default function FloatingWhatsAppButton() {
   const pathname = usePathname();
   const hasBottomDock = pathname !== "/checkout" && pathname !== "/cart";
+  const festivalTheme = useFestivalTheme();
+  const isFestivalActive = Boolean(festivalTheme?.isActive && festivalTheme.preset !== "DEFAULT");
 
   return (
     <a
       href={WHATSAPP_URL}
       target="_blank"
       rel="noopener noreferrer"
+      style={isFestivalActive ? { boxShadow: "0 0 0 2.5px var(--festival-accent), 0 10px 25px rgba(0,0,0,0.22)" } : undefined}
       className={`fixed z-30 flex items-center justify-center w-13 h-13 rounded-full bg-[#25D366] hover:bg-[#20ba5a] text-white shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#25D366] ${
         hasBottomDock
           ? "bottom-[calc(4.75rem+env(safe-area-inset-bottom,12px))] right-4 md:bottom-6 md:right-6"

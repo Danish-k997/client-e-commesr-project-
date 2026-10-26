@@ -3,6 +3,8 @@
 import Link from "next/link";
 
 import { useCustomerProducts } from "../../lib/api";
+import { useFestivalTheme } from "./FestivalThemeProvider";
+import FestivalMotif from "./FestivalMotif";
 import ProductCard from "./ProductCard";
 import styles from "./CustomizableProductsSection.module.css";
 
@@ -23,6 +25,10 @@ function CustomizableSectionSkeleton() {
 }
 
 export default function CustomizableProductsSection() {
+  const festivalTheme = useFestivalTheme();
+  const isFestivalActive = Boolean(festivalTheme?.isActive && festivalTheme.preset !== "DEFAULT");
+  const showDecorations = isFestivalActive && festivalTheme?.enableDecorations;
+
   const productsQuery = useCustomerProducts({
     page: 1,
     limit: HOMEPAGE_CUSTOMIZABLE_LIMIT,
@@ -44,7 +50,12 @@ export default function CustomizableProductsSection() {
     <section className={styles["customizable-section"]} aria-label="Customizable products">
       <header className={styles["customizable-header"]}>
         <p className="eyebrow">CUSTOM MADE</p>
-        <h2 className={styles["customizable-title"]}>Make It Yours</h2>
+        <div className="flex items-center justify-center gap-2">
+          <h2 className={styles["customizable-title"]}>Make It Yours</h2>
+          {showDecorations && (
+            <FestivalMotif preset={festivalTheme?.preset} variant="heading" size={22} />
+          )}
+        </div>
         <p className={styles["customizable-subtitle"]}>
           Pick a product, add your name, photo or details, and we’ll make it for you.
         </p>

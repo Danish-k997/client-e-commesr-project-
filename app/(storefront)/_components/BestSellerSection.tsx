@@ -12,6 +12,8 @@ import "swiper/css/navigation";
 import "swiper/css/a11y";
 
 import { useCustomerProducts } from "../../lib/api";
+import { useFestivalTheme } from "./FestivalThemeProvider";
+import FestivalMotif from "./FestivalMotif";
 import ProductCard from "./ProductCard";
 
 const AUTOPLAY_DELAY = 4500;
@@ -21,6 +23,10 @@ export default function BestSellerSection() {
   const prevButtonRef = useRef<HTMLButtonElement>(null);
   const nextButtonRef = useRef<HTMLButtonElement>(null);
   const swiperRef = useRef<SwiperInstance | null>(null);
+
+  const festivalTheme = useFestivalTheme();
+  const isFestivalActive = Boolean(festivalTheme?.isActive && festivalTheme.preset !== "DEFAULT");
+  const showDecorations = isFestivalActive && festivalTheme?.enableDecorations;
 
   const productsQuery = useCustomerProducts({
     page: 1,
@@ -44,9 +50,14 @@ export default function BestSellerSection() {
             <span className="text-[11px] font-bold tracking-widest uppercase text-brand-muted block mb-1">
               CURATED SELECTION
             </span>
-            <h2 className="font-heading font-extrabold text-3xl sm:text-4xl text-brand-charcoal tracking-tight">
-              BESTSELLERS
-            </h2>
+            <div className="flex items-center gap-2.5">
+              <h2 className="font-heading font-extrabold text-3xl sm:text-4xl text-brand-charcoal tracking-tight">
+                BESTSELLERS
+              </h2>
+              {showDecorations && (
+                <FestivalMotif preset={festivalTheme?.preset} variant="heading" size={24} />
+              )}
+            </div>
             <p className="text-sm text-brand-muted mt-1">
               Popular picks, ready to order.
             </p>

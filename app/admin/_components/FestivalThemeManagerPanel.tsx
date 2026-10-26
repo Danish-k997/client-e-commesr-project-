@@ -12,11 +12,37 @@ import type {
   ThemeIntensity,
 } from "../../models/FestivalTheme";
 import { formatIstHuman, parseIstToUtc } from "../../lib/festivals/timezone";
+import FestivalMotif from "../../(storefront)/_components/FestivalMotif";
 import styles from "./FestivalThemeManagerPanel.module.css";
 
 interface FeedbackState {
   type: "success" | "error";
   message: string;
+}
+
+function getPresetStatus(presetItem: FestivalPresetAdminRecord) {
+  if (presetItem.status === "DRAFT" || !presetItem.isEnabled) {
+    return { label: "Draft", styleClass: styles.presetStateBadge };
+  }
+  const now = new Date();
+  const start = new Date(presetItem.startDate);
+  const end = new Date(presetItem.endDate);
+  if (now < start) {
+    return {
+      label: "Scheduled",
+      styleClass: `${styles.presetStateBadge} ${styles.presetStateBadgeScheduled}`,
+    };
+  }
+  if (now > end) {
+    return {
+      label: "Expired",
+      styleClass: `${styles.presetStateBadge} ${styles.presetStateBadgeExpired}`,
+    };
+  }
+  return {
+    label: "Active Now",
+    styleClass: `${styles.presetStateBadge} ${styles.presetStateBadgeActive}`,
+  };
 }
 
 export default function FestivalThemeManagerPanel() {
@@ -185,7 +211,6 @@ export default function FestivalThemeManagerPanel() {
     );
   }
 
-  const isCurrentActive = activeTheme?.preset === currentRecord?.preset;
   const isDefaultActive = !activeTheme || !activeTheme.isActive || activeTheme.preset === "DEFAULT";
 
   return (
@@ -247,14 +272,14 @@ export default function FestivalThemeManagerPanel() {
         </div>
       )}
 
-      {/* Presets Navigation Cards */}
+      {/* Presets Navigation Cards with Intelligent Status Badges */}
       <div className={styles.presetsSection}>
         <h2 className={styles.sectionTitle}>Festival Presets</h2>
         <div className={styles.presetsGrid} role="tablist" aria-label="Preset themes">
           {presets.map((presetItem) => {
             const isSelected = presetItem.preset === selectedPresetKey;
-            const isPublished = presetItem.status === "PUBLISHED" && presetItem.isEnabled;
             const accent = presetItem.customAccentColor || presetItem.metadata.primaryAccent;
+            const statusInfo = getPresetStatus(presetItem);
 
             return (
               <button
@@ -268,13 +293,7 @@ export default function FestivalThemeManagerPanel() {
               >
                 <div className={styles.presetCardTop}>
                   <span className={styles.presetSymbol}>{presetItem.metadata.symbol}</span>
-                  <span
-                    className={`${styles.presetStateBadge} ${
-                      isPublished ? styles.presetStateBadgePublished : ""
-                    }`}
-                  >
-                    {isPublished ? "Published" : "Draft"}
-                  </span>
+                  <span className={statusInfo.styleClass}>{statusInfo.label}</span>
                 </div>
                 <span className={styles.presetName}>{presetItem.metadata.title.split("(")[0].trim()}</span>
                 <span className={styles.presetAccentBar} style={{ background: accent }} />
@@ -295,6 +314,19 @@ export default function FestivalThemeManagerPanel() {
                 <span>{currentRecord.metadata.title}</span>
               </h2>
               <p className={styles.editorTagline}>{currentRecord.metadata.tagline}</p>
+            </div>
+
+            {/* Features Included in this Theme */}
+            <div className={styles.featuresCard}>
+              <h3 className={styles.featuresTitle}>
+                <FestivalMotif preset={currentRecord.preset} variant="inline" size={14} />
+                <span>Features Included in {currentRecord.metadata.title.split("(")[0].trim()}</span>
+              </h3>
+              <ul className={styles.featuresList}>
+                {currentRecord.metadata.featuresSummary?.map((feat, idx) => (
+                  <li key={idx}>{feat}</li>
+                ))}
+              </ul>
             </div>
 
             {currentRecord.preset === "DEFAULT" ? (
@@ -357,7 +389,7 @@ export default function FestivalThemeManagerPanel() {
                       onClick={() => setIntensity("subtle")}
                     >
                       <span className={styles.intensityBtnLabel}>Subtle</span>
-                      <span className={styles.intensityBtnDesc}>Soft borders & hints</span>
+                      <span className={styles.intensityBtnDesc}>Soft borders & accents</span>
                     </button>
                     <button
                       type="button"
@@ -367,7 +399,7 @@ export default function FestivalThemeManagerPanel() {
                       onClick={() => setIntensity("balanced")}
                     >
                       <span className={styles.intensityBtnLabel}>Balanced</span>
-                      <span className={styles.intensityBtnDesc}>Badge & subtle glows</span>
+                      <span className={styles.intensityBtnDesc}>Full cards, CTAs & glows</span>
                     </button>
                     <button
                       type="button"
@@ -459,9 +491,9 @@ export default function FestivalThemeManagerPanel() {
                 <div className={styles.formGroup}>
                   <div className={styles.toggleRow}>
                     <div className={styles.toggleLabelWrap}>
-                      <span className={styles.toggleLabel}>Festive Motif Badges</span>
+                      <span className={styles.toggleLabel}>Festive Motif Badges & Vectors</span>
                       <span className={styles.toggleSub}>
-                        Displays {currentRecord.metadata.symbol} icon accents across cards & headers
+                        Displays {currentRecord.metadata.symbol} vector motifs across cards & headings
                       </span>
                     </div>
                     <button
@@ -481,7 +513,7 @@ export default function FestivalThemeManagerPanel() {
                     <div className={styles.toggleLabelWrap}>
                       <span className={styles.toggleLabel}>Subtle Festive Animations</span>
                       <span className={styles.toggleSub}>
-                        Gentle glow transitions (respects reduced-motion settings)
+                        Gentle glow transitions & flame micro-flicker (respects reduced-motion)
                       </span>
                     </div>
                     <button
@@ -521,23 +553,39 @@ export default function FestivalThemeManagerPanel() {
             )}
           </div>
 
-          {/* Right Column: Live Mobile Storefront Preview */}
+          {/* Right Column: Simulated Storefront Live Preview */}
           <div className={styles.previewSticky}>
-            <h3 className={styles.sectionTitle}>Live Mobile Preview (360px)</h3>
+            <div className="flex items-center justify-between">
+              <h3 className={styles.sectionTitle}>Simulated Storefront Preview</h3>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+                Token Reflection
+              </span>
+            </div>
+
             <div
               className={styles.previewPhone}
               style={{
                 "--preview-accent": effectiveAccent,
                 "--preview-tint": currentRecord.metadata.surfaceTint,
                 "--preview-border": currentRecord.metadata.borderAccent,
+                "--preview-button-bg": customAccentColor || currentRecord.metadata.buttonBg,
+                "--preview-button-text": currentRecord.metadata.buttonText,
+                "--preview-badge-bg": customAccentColor || currentRecord.metadata.badgeBg,
+                "--preview-badge-text": currentRecord.metadata.badgeText,
+                "--preview-glow": currentRecord.metadata.glowAccent ? `0 4px 14px ${currentRecord.metadata.glowAccent}` : "none",
               } as React.CSSProperties}
             >
               <div className={styles.phoneSpeaker} />
+              <div className={styles.previewSimulatorLabel}>Storefront Mobile Simulation (360px)</div>
 
-              {/* Announcement Bar Preview */}
+              {/* 1. Real Announcement Bar */}
               {showAnnouncement && announcementText ? (
                 <div className={styles.previewBar}>
-                  <span>{currentRecord.metadata.symbol}</span>
+                  {enableDecorations ? (
+                    <FestivalMotif preset={currentRecord.preset} variant="inline" size={13} />
+                  ) : (
+                    <span>{currentRecord.metadata.symbol}</span>
+                  )}
                   <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {announcementText}
                   </span>
@@ -548,26 +596,64 @@ export default function FestivalThemeManagerPanel() {
                 </div>
               )}
 
-              {/* Header Preview */}
+              {/* 2. Real Brand Header */}
               <div className={styles.previewHeader}>
                 <div className={styles.previewLogo}>
                   <span>KASAR DIMENSIONS</span>
                 </div>
                 {enableDecorations && (
                   <span className={styles.previewTag}>
-                    {currentRecord.metadata.symbol} Festive
+                    <FestivalMotif preset={currentRecord.preset} variant="badge" size={11} />
+                    <span>{currentRecord.metadata.title.split(" ")[0]} Edition</span>
                   </span>
                 )}
               </div>
 
-              {/* Hero Section Preview (Strictly untouched HeroSlide representation) */}
-              <div className={styles.previewHeroMock}>
-                <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                  [Hero Slide Section Unchanged]
-                </span>
-                <div className={styles.previewHeroTitle}>Next-Gen 3D Printing</div>
-                <button type="button" className={styles.previewCtaBtn}>
-                  Explore Catalog
+              {/* 3. Real Product Card with Theme Tokens */}
+              <div className={styles.previewProductCard}>
+                <div className={styles.previewCardMedia}>
+                  {enableDecorations && (
+                    <span className={styles.previewCardBadge}>
+                      <FestivalMotif preset={currentRecord.preset} variant="badge" size={11} />
+                      <span>{currentRecord.metadata.title.split(" ")[0]} Pick</span>
+                    </span>
+                  )}
+                  <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 600 }}>
+                    [Product Image]
+                  </span>
+                </div>
+                <div className={styles.previewCardBody}>
+                  <span className={styles.previewCardCategory}>3D Printed Artifact</span>
+                  <h4 className={styles.previewCardTitle}>Custom Lithophane Night Lamp</h4>
+                  <div className={styles.previewCardPriceRow}>
+                    <span>₹899</span>
+                    <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", textDecoration: "line-through" }}>
+                      ₹1,199
+                    </span>
+                  </div>
+                  <button type="button" className={styles.previewButton}>
+                    <span>Customize Now &rarr;</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 4. Product Detail Snippet */}
+              <div className={styles.previewPdpSnippet}>
+                <div className="flex items-center justify-between">
+                  <span className={styles.previewPdpLabel}>Product Page Actions</span>
+                  <span
+                    className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase"
+                    style={{
+                      background: "var(--preview-tint)",
+                      border: "1px solid var(--preview-border)",
+                      color: "var(--preview-accent)",
+                    }}
+                  >
+                    Save 25%
+                  </span>
+                </div>
+                <button type="button" className={styles.previewPdpAddBtn}>
+                  <span>ADD TO CART</span>
                 </button>
               </div>
             </div>

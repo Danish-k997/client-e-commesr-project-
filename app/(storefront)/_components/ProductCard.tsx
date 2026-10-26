@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useState } from "react";
 
 import type { CustomerProductRecord, ProductRecord } from "../../lib/api";
+import { useFestivalTheme } from "./FestivalThemeProvider";
+import FestivalMotif from "./FestivalMotif";
 import styles from "./ProductCard.module.css";
 
 function formatPrice(value: number) {
@@ -35,6 +37,10 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
   const variationCount = product.variants?.length || product.variationDefinitions?.[0]?.options?.length || 0;
   const showVariants = Boolean(product.hasVariants && variationCount > 0);
 
+  const festivalTheme = useFestivalTheme();
+  const isFestivalActive = Boolean(festivalTheme?.isActive && festivalTheme.preset !== "DEFAULT");
+  const showDecorations = isFestivalActive && festivalTheme?.enableDecorations;
+
   return (
     <article className={styles["product-card"]}>
       <Link className={styles["product-card-media"]} href={productHref} tabIndex={-1} aria-hidden="true">
@@ -53,12 +59,21 @@ export default function ProductCard({ product, priority = false }: ProductCardPr
 
         {isCustomizable ? (
           <span className={styles["product-card-customizable-badge"]}>
-            <span className={styles["badge-dot"]} />
+            {showDecorations ? (
+              <FestivalMotif preset={festivalTheme?.preset} variant="badge" size={12} />
+            ) : (
+              <span className={styles["badge-dot"]} />
+            )}
             Personalized
           </span>
         ) : (
           <span className={styles["product-card-featured-badge"]}>
-            Featured
+            {showDecorations && (
+              <FestivalMotif preset={festivalTheme?.preset} variant="badge" size={12} />
+            )}
+            {showDecorations && festivalTheme
+              ? `${festivalTheme.title.split(" ")[0]} Pick`
+              : "Featured"}
           </span>
         )}
 

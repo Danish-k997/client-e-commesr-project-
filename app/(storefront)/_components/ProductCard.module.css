@@ -3,7 +3,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid var(--border);
+  border: 1px solid var(--festival-border, var(--border));
   border-radius: 16px;
   background: var(--surface);
   box-shadow: 0 4px 20px -2px rgba(24, 24, 27, 0.05);
@@ -12,8 +12,8 @@
 
 .product-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(24, 24, 27, 0.18);
-  box-shadow: 0 12px 30px -4px rgba(24, 24, 27, 0.09);
+  border-color: var(--festival-border-hover, rgba(24, 24, 27, 0.18));
+  box-shadow: 0 12px 30px -4px rgba(24, 24, 27, 0.09), var(--festival-glow, 0 0 0 transparent);
 }
 
 .product-card-media {
@@ -83,10 +83,11 @@
   z-index: 1;
   display: inline-flex;
   align-items: center;
+  gap: 5px;
   padding: 4px 10px;
   border-radius: 6px;
-  background: var(--lime);
-  color: #111827;
+  background: var(--festival-badge-bg, var(--lime));
+  color: var(--festival-badge-text, #111827);
   font-family: var(--font-outfit), sans-serif;
   font-size: 0.58rem;
   font-weight: 800;
@@ -218,8 +219,8 @@
   padding: 0 16px;
   border: none;
   border-radius: 12px;
-  background: var(--lime);
-  color: #111827;
+  background: var(--festival-button-bg, var(--lime));
+  color: var(--festival-button-text, #111827);
   font-family: var(--font-outfit), sans-serif;
   font-size: 0.72rem;
   font-weight: 800;
@@ -233,8 +234,8 @@
 
 .product-card-cta:hover:not(.is-disabled) {
   transform: translateY(-1px);
-  background: var(--lime-hover);
-  box-shadow: 0 6px 18px rgba(204, 255, 0, 0.35);
+  background: var(--festival-button-hover-bg, var(--lime-hover));
+  box-shadow: var(--festival-glow, 0 6px 18px rgba(204, 255, 0, 0.35));
 }
 
 .cta-arrow {

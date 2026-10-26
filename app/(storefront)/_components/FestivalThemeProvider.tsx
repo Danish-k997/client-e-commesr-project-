@@ -20,6 +20,8 @@ export default function FestivalThemeProvider({
   const isFestivalActive = Boolean(theme?.isActive && theme.preset !== "DEFAULT");
   const presetKey = isFestivalActive && theme ? theme.preset.toLowerCase() : "default";
   const intensity = theme?.intensity || "balanced";
+  const enableDecorations = isFestivalActive ? Boolean(theme?.enableDecorations) : false;
+  const enableAnimations = isFestivalActive ? Boolean(theme?.enableAnimations) : false;
   const cssVariables = (theme?.cssVariables || {}) as React.CSSProperties;
 
   return (
@@ -27,6 +29,9 @@ export default function FestivalThemeProvider({
       <div
         data-festival-theme={presetKey}
         data-festival-intensity={intensity}
+        data-festival-decorations={enableDecorations ? "true" : "false"}
+        data-festival-animations={enableAnimations ? "true" : "false"}
+        data-festival-active={isFestivalActive ? "true" : "false"}
         style={cssVariables}
         className="festival-root-provider contents"
       >

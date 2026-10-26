@@ -10,6 +10,8 @@ import { createAuthClient } from "better-auth/react";
 import { getCartItemCount, useCart, useCategories } from "../../lib/api";
 import { getApplicationRole } from "../../lib/roles";
 import TopAnnouncementBar from "./TopAnnouncementBar";
+import { useFestivalTheme } from "./FestivalThemeProvider";
+import FestivalMotif from "./FestivalMotif";
 
 const authClient = createAuthClient();
 
@@ -123,6 +125,10 @@ export default function GlobalHeader({ isAdmin: initialIsAdmin }: GlobalHeaderPr
     cartCount > 0
       ? `Cart, ${cartCount} ${cartCount === 1 ? "item" : "items"}`
       : "Cart";
+
+  const festivalTheme = useFestivalTheme();
+  const isFestivalActive = Boolean(festivalTheme?.isActive && festivalTheme.preset !== "DEFAULT");
+  const showDecorations = isFestivalActive && festivalTheme?.enableDecorations;
 
   // Close desktop categories dropdown when clicking outside or pressing Escape
   useEffect(() => {
@@ -284,6 +290,21 @@ export default function GlobalHeader({ isAdmin: initialIsAdmin }: GlobalHeaderPr
             <span className="site-brand-name">KASAR</span>
             <span className="site-brand-subtitle">DIMENSIONS</span>
           </div>
+          {isFestivalActive && (
+            <span
+              className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ml-1"
+              style={{
+                background: "var(--festival-surface-tint, rgba(254, 243, 199, 0.4))",
+                border: "1px solid var(--festival-border, rgba(217, 119, 6, 0.4))",
+                color: "var(--festival-accent, #D97706)",
+              }}
+            >
+              {showDecorations && (
+                <FestivalMotif preset={festivalTheme?.preset} variant="badge" size={11} />
+              )}
+              <span>{festivalTheme?.title.split(" ")[0]} Edition</span>
+            </span>
+          )}
         </Link>
 
         <nav className="site-nav site-nav-desktop" aria-label="Main navigation">

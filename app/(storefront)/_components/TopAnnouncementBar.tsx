@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { CONTACT_PHONE_URL, FORMATTED_PHONE, WHATSAPP_URL } from "../../lib/contact";
 import { useFestivalTheme } from "./FestivalThemeProvider";
+import FestivalMotif from "./FestivalMotif";
 import styles from "./TopAnnouncementBar.module.css";
 
 function PhoneIcon() {
@@ -71,7 +72,11 @@ export default function TopAnnouncementBar() {
           {isFestivalActive ? (
             <div className={styles.festivalGreeting}>
               <span className={styles.festivalSymbol} aria-hidden="true">
-                {festivalTheme?.symbol}
+                {festivalTheme?.enableDecorations ? (
+                  <FestivalMotif preset={festivalTheme.preset} variant="inline" size={15} />
+                ) : (
+                  festivalTheme?.symbol
+                )}
               </span>
               <span className={styles.festivalText}>{festivalTheme?.announcementText}</span>
               <span className={styles.dotSeparator} aria-hidden="true">

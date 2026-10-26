@@ -26,6 +26,8 @@ import ProductCustomization from "./ProductCustomization";
 import { ProductTrustPill, ProductCredentialsSection } from "./ProductTrustSection";
 import RelatedProductsSection from "./RelatedProductsSection";
 import useProductCustomization from "./useProductCustomization";
+import { useFestivalTheme } from "../../../_components/FestivalThemeProvider";
+import FestivalMotif from "../../../_components/FestivalMotif";
 
 function formatPrice(value: number) {
   return new Intl.NumberFormat("en-IN", {
@@ -189,6 +191,10 @@ export default function ProductDetailView({ initialProduct }: { initialProduct: 
   const [cartFeedback, setCartFeedback] = useState<
     { kind: "success" } | { kind: "error"; message: string } | null
   >(null);
+
+  const festivalTheme = useFestivalTheme();
+  const isFestivalActive = Boolean(festivalTheme?.isActive && festivalTheme.preset !== "DEFAULT");
+  const showDecorations = isFestivalActive && festivalTheme?.enableDecorations;
 
   const customizationFields = useMemo(
     () => getEnabledCustomizationFields(product.customization),
@@ -598,6 +604,21 @@ export default function ProductDetailView({ initialProduct }: { initialProduct: 
             )}
 
             {/* Product Title */}
+            {isFestivalActive && (
+              <div
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-2 self-start"
+                style={{
+                  background: "var(--festival-surface-tint, rgba(254, 243, 199, 0.3))",
+                  border: "1px solid var(--festival-border, rgba(217, 119, 6, 0.4))",
+                  color: "var(--festival-accent, #D97706)",
+                }}
+              >
+                {showDecorations && (
+                  <FestivalMotif preset={festivalTheme?.preset} variant="badge" size={13} />
+                )}
+                <span>{festivalTheme?.title}</span>
+              </div>
+            )}
             <h1 className={styles["product-detail-title"]}>{product.title}</h1>
 
             {/* Rating Stars & Batch Proof */}
@@ -631,7 +652,14 @@ export default function ProductDetailView({ initialProduct }: { initialProduct: 
                       <div className="flex items-center gap-2">
                         <del className="text-neutral-400 text-lg">{formatPrice(compareAtPrice)}</del>
                         {discountPercent && (
-                          <span className="px-2 py-0.5 rounded-full bg-[#CCFF00]/30 text-neutral-900 text-xs font-bold uppercase tracking-wider">
+                          <span
+                            className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider"
+                            style={{
+                              background: "var(--festival-surface-tint, rgba(204, 255, 0, 0.2))",
+                              border: "1px solid var(--festival-border, transparent)",
+                              color: "var(--festival-accent, #111827)",
+                            }}
+                          >
                             Save {discountPercent}%
                           </span>
                         )}

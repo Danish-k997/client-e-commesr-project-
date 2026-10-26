@@ -359,10 +359,10 @@
 }
 
 .product-detail-option.is-selected {
-  border-color: var(--text, #18181B);
+  border-color: var(--festival-accent, var(--text, #18181B));
   background: var(--text, #18181B);
   color: #FAF9F5;
-  box-shadow: 0 4px 14px rgba(24, 24, 27, 0.2);
+  box-shadow: 0 4px 14px var(--festival-glow, rgba(24, 24, 27, 0.2));
 }
 
 .product-detail-note {
@@ -467,17 +467,17 @@
   cursor: not-allowed;
 }
 
-/* Primary CTA: Electric Lime */
+/* Primary CTA: Electric Lime (Theme Responsive) */
 .product-detail-cta-primary {
-  background: var(--lime, #CCFF00) !important;
-  color: #111827 !important;
-  border-color: #bceb00 !important;
-  box-shadow: 0 4px 20px rgba(204, 255, 0, 0.4);
+  background: var(--festival-button-bg, var(--lime, #CCFF00)) !important;
+  color: var(--festival-button-text, #111827) !important;
+  border-color: var(--festival-border, #bceb00) !important;
+  box-shadow: var(--festival-glow, 0 4px 20px rgba(204, 255, 0, 0.4)) !important;
 }
 
 .product-detail-cta-primary:hover:not(:disabled) {
-  background: #bceb00 !important;
-  box-shadow: 0 8px 24px rgba(204, 255, 0, 0.45);
+  background: var(--festival-button-hover-bg, #bceb00) !important;
+  box-shadow: var(--festival-glow, 0 8px 24px rgba(204, 255, 0, 0.45)) !important;
 }
 
 /* Secondary CTA: Deep Charcoal Buy Now */
@@ -567,7 +567,7 @@
 
 .editorial-tab-btn.is-active {
   color: var(--text, #18181B);
-  border-bottom-color: var(--text, #18181B);
+  border-bottom-color: var(--festival-accent, var(--text, #18181B));
   font-weight: 700;
 }
 

@@ -4165,40 +4165,66 @@ textarea:focus-visible {
 }
 
 /* ==========================================================================
-   FESTIVAL THEME SYSTEM (Option B — Balanced Festival Theme)
+   FESTIVAL THEME SYSTEM (Full-Storefront Festival Experience)
    Strictly mobile-first, respectful of KASAR DIMENSIONS typography & HeroSlide
    ========================================================================== */
 
-/* Scoped festive overrides for active presets */
-[data-festival-theme]:not([data-festival-theme="default"]) .badge-pill-dot {
-  background: var(--festival-accent, #ccff00);
-  box-shadow: 0 0 8px var(--festival-accent, #ccff00);
+/* Scoped festive micro-animations */
+@keyframes flameFlicker {
+  0%, 100% {
+    transform: scale(1) translateY(0);
+    opacity: 0.95;
+  }
+  50% {
+    transform: scale(1.08) translateY(-0.5px);
+    opacity: 1;
+  }
 }
 
-[data-festival-theme="diwali"] {
-  --festival-glow: rgba(217, 119, 6, 0.25);
+@keyframes festiveGentlePulse {
+  0%, 100% {
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
-[data-festival-theme="holi"] {
-  --festival-glow: rgba(225, 29, 72, 0.22);
+[data-festival-animations="true"] .festival-motif-diwali .festival-flame-path {
+  transform-origin: center bottom;
+  animation: flameFlicker 2.4s ease-in-out infinite;
 }
 
-[data-festival-theme="eid"] {
-  --festival-glow: rgba(5, 150, 105, 0.22);
+[data-festival-animations="true"] .festival-motif-christmas {
+  transform-origin: center;
+  animation: festiveGentlePulse 3.2s ease-in-out infinite;
 }
 
-[data-festival-theme="raksha_bandhan"] {
-  --festival-glow: rgba(220, 38, 38, 0.22);
+/* Feature Toggle: Disable Decorations */
+[data-festival-decorations="false"] .festival-motif {
+  display: none !important;
 }
 
-[data-festival-theme="christmas"] {
-  --festival-glow: rgba(21, 128, 61, 0.22);
+/* Feature Toggle: Disable Animations */
+[data-festival-animations="false"] *,
+[data-festival-animations="false"] *::before,
+[data-festival-animations="false"] *::after {
+  animation: none !important;
 }
 
-/* Balanced intensity festive details */
-[data-festival-intensity="balanced"][data-festival-theme]:not([data-festival-theme="default"]) .membership-pill,
-[data-festival-intensity="strong"][data-festival-theme]:not([data-festival-theme="default"]) .membership-pill {
+/* Visual Intensity Scaling */
+[data-festival-intensity="subtle"] .festival-motif {
+  opacity: 0.7;
+}
+
+[data-festival-intensity="strong"] .festival-motif {
+  filter: drop-shadow(0 2px 5px var(--festival-accent));
+}
+
+/* Storefront Search Focus Highlight */
+[data-festival-theme]:not([data-festival-theme="default"]) .site-header-search-bar:focus-within {
   border-color: var(--festival-accent) !important;
+  box-shadow: 0 0 0 2.5px var(--festival-border) !important;
 }
 
 /* Accessibility: respect user prefers-reduced-motion */
@@ -4212,3 +4238,4 @@ textarea:focus-visible {
     scroll-behavior: auto !important;
   }
 }
+
