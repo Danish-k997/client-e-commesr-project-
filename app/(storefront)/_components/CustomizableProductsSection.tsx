@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCustomerProducts } from "../../lib/api";
 import { useFestivalTheme } from "./FestivalThemeProvider";
 import FestivalMotif from "./FestivalMotif";
+import DiyaCluster from "./DiyaCluster";
 import ProductCard from "./ProductCard";
 import styles from "./CustomizableProductsSection.module.css";
 
@@ -27,6 +28,7 @@ function CustomizableSectionSkeleton() {
 export default function CustomizableProductsSection() {
   const festivalTheme = useFestivalTheme();
   const isFestivalActive = Boolean(festivalTheme?.isActive && festivalTheme.preset !== "DEFAULT");
+  const isDiwaliActive = isFestivalActive && festivalTheme?.preset === "DIWALI";
   const showDecorations = isFestivalActive && festivalTheme?.enableDecorations;
 
   const productsQuery = useCustomerProducts({
@@ -49,15 +51,23 @@ export default function CustomizableProductsSection() {
   return (
     <section className={styles["customizable-section"]} aria-label="Customizable products">
       <header className={styles["customizable-header"]}>
-        <p className="eyebrow">CUSTOM MADE</p>
-        <div className="flex items-center justify-center gap-2">
+        {isDiwaliActive && showDecorations ? (
+          <div className="mb-3 flex justify-start">
+            <DiyaCluster showGreeting={true} greetingText="Shubh Deepavali" size="md" align="start" />
+          </div>
+        ) : (
+          <p className="eyebrow">CUSTOM MADE</p>
+        )}
+        <div className="flex items-center gap-2">
           <h2 className={styles["customizable-title"]}>Make It Yours</h2>
-          {showDecorations && (
+          {showDecorations && !isDiwaliActive && (
             <FestivalMotif preset={festivalTheme?.preset} variant="heading" size={22} />
           )}
         </div>
         <p className={styles["customizable-subtitle"]}>
-          Pick a product, add your name, photo or details, and we’ll make it for you.
+          {isDiwaliActive
+            ? "Personalised 3D gifts, festive keepsakes & bespoke creations handcrafted for your celebrations."
+            : "Pick a product, add your name, photo or details, and we’ll make it for you."}
         </p>
       </header>
 

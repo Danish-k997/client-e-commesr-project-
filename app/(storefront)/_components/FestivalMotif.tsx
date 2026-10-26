@@ -3,7 +3,7 @@
 import React from "react";
 import type { FestivalPreset } from "../../models/FestivalTheme";
 
-export type MotifVariant = "badge" | "heading" | "corner" | "inline";
+export type MotifVariant = "badge" | "heading" | "corner" | "inline" | "cluster";
 
 interface FestivalMotifProps {
   preset?: FestivalPreset | string;
@@ -21,6 +21,22 @@ export default function FestivalMotif({
   color,
 }: FestivalMotifProps) {
   const normalized = preset.toUpperCase();
+
+  // If cluster is requested for Diwali, delegate to balanced multi-diya layout
+  if (normalized === "DIWALI" && variant === "cluster") {
+    const clusterCenter = size || 26;
+    const clusterFlank = Math.round(clusterCenter * 0.72);
+    return (
+      <span
+        className={`festival-motif-cluster inline-flex items-end justify-center gap-1 relative ${className}`}
+        aria-hidden="true"
+      >
+        <FestivalMotif preset="DIWALI" variant="badge" size={clusterFlank} className="opacity-90 transform -rotate-3" />
+        <FestivalMotif preset="DIWALI" variant="heading" size={clusterCenter} className="z-10 scale-105" />
+        <FestivalMotif preset="DIWALI" variant="badge" size={clusterFlank} className="opacity-90 transform rotate-3" />
+      </span>
+    );
+  }
 
   // Determine pixel size based on variant if not explicitly given
   const defaultSize =
@@ -40,7 +56,7 @@ export default function FestivalMotif({
     style.color = color;
   }
 
-  // 1. DIWALI — Traditional Diya Lamp with Flickering Flame
+  // 1. DIWALI — Traditional Indian Diya Lamp with Refined Multi-Layer Flame & Terracotta Vessel
   if (normalized === "DIWALI") {
     return (
       <svg
@@ -50,26 +66,60 @@ export default function FestivalMotif({
         aria-hidden="true"
         fill="none"
       >
-        {/* Flame */}
+        {/* Soft Ambient Radiance Behind Flame */}
+        <circle cx="12" cy="7.5" r="4.5" fill="var(--festival-accent, #D97706)" opacity="0.18" className="festival-flame-radiance" />
+
+        {/* Outer Flame (Golden Amber) */}
         <path
-          d="M12 2C11 5 9.5 6.5 9.5 8.5C9.5 10.2 10.6 11.5 12 11.5C13.4 11.5 14.5 10.2 14.5 8.5C14.5 6.5 13 5 12 2Z"
+          d="M12 2C10.8 5 9.2 6.8 9.2 8.8C9.2 10.6 10.4 12 12 12C13.6 12 14.8 10.6 14.8 8.8C14.8 6.8 13.2 5 12 2Z"
           fill="var(--festival-accent, #D97706)"
           className="festival-flame-path"
         />
-        {/* Inner flame glow */}
+
+        {/* Inner Flame (Radiant Warm Yellow) */}
         <path
-          d="M12 4.5C11.5 6 10.8 7 10.8 8.2C10.8 9 11.3 9.8 12 9.8C12.7 9.8 13.2 9 13.2 8.2C13.2 7 12.5 6 12 4.5Z"
+          d="M12 4.2C11.3 5.8 10.4 7.2 10.4 8.6C10.4 9.8 11.1 10.8 12 10.8C12.9 10.8 13.6 9.8 13.6 8.6C13.6 7.2 12.7 5.8 12 4.2Z"
           fill="#FEF08A"
+          className="festival-flame-inner"
         />
-        {/* Diya Base Vessel */}
+
+        {/* Core Incandescent Spark */}
         <path
-          d="M4 13C4 13 4 18 12 18C20 18 20 13 20 13C20 13 21 13 21 14C21 18.5 16.5 21 12 21C7.5 21 3 18.5 3 14C3 13 4 13 4 13Z"
+          d="M12 6.2C11.6 7.2 11.2 8 11.2 8.8C11.2 9.4 11.5 9.8 12 9.8C12.5 9.8 12.8 9.4 12.8 8.8C12.8 8 12.4 7.2 12 6.2Z"
+          fill="#FFFFFF"
+          opacity="0.9"
+        />
+
+        {/* Cotton Wick Baati Tip */}
+        <path
+          d="M11.6 12.4L12 11.2L12.4 12.4H11.6Z"
+          fill="#78350F"
+        />
+
+        {/* Earthen Terracotta Vessel Underbody */}
+        <path
+          d="M3.2 13.6C3.2 13.6 3.8 18.8 12 18.8C20.2 18.8 20.8 13.6 20.8 13.6C21.6 14 21.8 15 21.5 16.5C20.8 19.8 16.8 22 12 22C7.2 22 3.2 19.8 2.5 16.5C2.2 15 2.4 14 3.2 13.6Z"
+          fill="var(--festival-accent, #B45309)"
+        />
+
+        {/* Upper Vessel Rim & Pinched Beak */}
+        <path
+          d="M2.2 13.2C2.2 12 5.5 11.4 12 11.4C18.5 11.4 21.8 12 21.8 13.2C21.8 14.6 18.5 15.6 12 15.6C5.5 15.6 2.2 14.6 2.2 13.2Z"
           fill="var(--festival-accent-secondary, #F59E0B)"
         />
-        {/* Diya Rim */}
+
+        {/* Interior Oil Reservoir */}
         <path
-          d="M2.5 13.5C2.5 12.5 5 12 12 12C19 12 21.5 12.5 21.5 13.5C21.5 14.5 19 15 12 15C5 15 2.5 14.5 2.5 13.5Z"
-          fill="var(--festival-accent, #D97706)"
+          d="M4.5 13.1C4.5 12.4 7.5 12 12 12C16.5 12 19.5 12.4 19.5 13.1C19.5 13.8 16.5 14.4 12 14.4C7.5 14.4 4.5 13.8 4.5 13.1Z"
+          fill="#D97706"
+        />
+
+        {/* Polished Golden Rim Catch Line */}
+        <path
+          d="M3.5 13.5C6.8 14.7 17.2 14.7 20.5 13.5"
+          stroke="#FEF08A"
+          strokeWidth="0.75"
+          strokeLinecap="round"
         />
       </svg>
     );

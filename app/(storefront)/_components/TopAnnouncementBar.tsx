@@ -71,14 +71,23 @@ export default function TopAnnouncementBar() {
         <div className={styles.deliveryMessage}>
           {isFestivalActive ? (
             <div className={styles.festivalGreeting}>
-              <span className={styles.festivalSymbol} aria-hidden="true">
-                {festivalTheme?.enableDecorations ? (
-                  <FestivalMotif preset={festivalTheme.preset} variant="inline" size={15} />
-                ) : (
-                  festivalTheme?.symbol
-                )}
-              </span>
-              <span className={styles.festivalText}>{festivalTheme?.announcementText}</span>
+              {festivalTheme?.preset === "DIWALI" && festivalTheme?.enableDecorations ? (
+                <span className={styles.diwaliGreetingPill}>
+                  <FestivalMotif preset="DIWALI" variant="inline" size={16} />
+                  <span className={styles.festivalText}>{festivalTheme.announcementText}</span>
+                </span>
+              ) : (
+                <>
+                  <span className={styles.festivalSymbol} aria-hidden="true">
+                    {festivalTheme?.enableDecorations ? (
+                      <FestivalMotif preset={festivalTheme.preset} variant="inline" size={15} />
+                    ) : (
+                      festivalTheme?.symbol
+                    )}
+                  </span>
+                  <span className={styles.festivalText}>{festivalTheme?.announcementText}</span>
+                </>
+              )}
               <span className={styles.dotSeparator} aria-hidden="true">
                 ·
               </span>

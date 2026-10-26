@@ -4173,11 +4173,45 @@ textarea:focus-visible {
 @keyframes flameFlicker {
   0%, 100% {
     transform: scale(1) translateY(0);
-    opacity: 0.95;
+    opacity: 0.94;
+  }
+  25% {
+    transform: scale(1.05, 1.07) translateY(-0.4px);
+    opacity: 1;
   }
   50% {
-    transform: scale(1.08) translateY(-0.5px);
+    transform: scale(0.97, 0.95) translateY(0.2px);
+    opacity: 0.92;
+  }
+  75% {
+    transform: scale(1.06, 1.08) translateY(-0.5px);
     opacity: 1;
+  }
+}
+
+@keyframes flameFlickerAlt {
+  0%, 100% {
+    transform: scale(1) translateY(0);
+    opacity: 0.92;
+  }
+  33% {
+    transform: scale(1.06, 1.08) translateY(-0.5px);
+    opacity: 1;
+  }
+  66% {
+    transform: scale(0.96, 0.94) translateY(0.3px);
+    opacity: 0.94;
+  }
+}
+
+@keyframes diyaGlowPulse {
+  0%, 100% {
+    opacity: 0.75;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.98;
+    transform: scale(1.08);
   }
 }
 
@@ -4190,9 +4224,30 @@ textarea:focus-visible {
   }
 }
 
+/* Diya flame animations (compositor-friendly transform/opacity) */
 [data-festival-animations="true"] .festival-motif-diwali .festival-flame-path {
-  transform-origin: center bottom;
-  animation: flameFlicker 2.4s ease-in-out infinite;
+  transform-origin: 12px 12px;
+  animation: flameFlicker 2.2s ease-in-out infinite;
+}
+
+[data-festival-animations="true"] .festival-motif-diwali .festival-flame-inner {
+  transform-origin: 12px 11px;
+  animation: flameFlickerAlt 2.2s ease-in-out infinite;
+}
+
+/* Stagger flame animation for flanking diyas in clusters */
+[data-festival-animations="true"] .festival-diya-flank-left .festival-flame-path {
+  animation-delay: 0.35s;
+  animation-duration: 2.6s;
+}
+
+[data-festival-animations="true"] .festival-diya-flank-right .festival-flame-path {
+  animation-delay: 0.7s;
+  animation-duration: 2.4s;
+}
+
+[data-festival-animations="true"] .festival-diya-glow {
+  animation: diyaGlowPulse 3.4s ease-in-out infinite;
 }
 
 [data-festival-animations="true"] .festival-motif-christmas {
@@ -4201,24 +4256,42 @@ textarea:focus-visible {
 }
 
 /* Feature Toggle: Disable Decorations */
-[data-festival-decorations="false"] .festival-motif {
+[data-festival-decorations="false"] .festival-motif,
+[data-festival-decorations="false"] .festival-diya-cluster-container,
+[data-festival-decorations="false"] .festival-moment-badge {
   display: none !important;
 }
 
-/* Feature Toggle: Disable Animations */
-[data-festival-animations="false"] *,
-[data-festival-animations="false"] *::before,
-[data-festival-animations="false"] *::after {
+/* Feature Toggle: Disable Animations (scoped safely to festive motifs) */
+[data-festival-animations="false"] .festival-motif,
+[data-festival-animations="false"] .festival-flame-path,
+[data-festival-animations="false"] .festival-flame-inner,
+[data-festival-animations="false"] .festival-flame-radiance,
+[data-festival-animations="false"] .festival-diya-glow,
+[data-festival-animations="false"] .festival-diya-cluster-container * {
   animation: none !important;
 }
 
 /* Visual Intensity Scaling */
 [data-festival-intensity="subtle"] .festival-motif {
-  opacity: 0.7;
+  opacity: 0.8;
+}
+
+[data-festival-intensity="subtle"] .festival-diya-glow {
+  opacity: 0.35 !important;
 }
 
 [data-festival-intensity="strong"] .festival-motif {
-  filter: drop-shadow(0 2px 5px var(--festival-accent));
+  filter: drop-shadow(0 2px 6px var(--festival-accent));
+}
+
+[data-festival-intensity="strong"] .festival-motif-diwali {
+  filter: drop-shadow(0 2px 7px rgba(217, 119, 6, 0.45));
+}
+
+[data-festival-intensity="strong"] .festival-diya-glow {
+  opacity: 1 !important;
+  transform: scale(1.15);
 }
 
 /* Storefront Search Focus Highlight */
@@ -4227,15 +4300,29 @@ textarea:focus-visible {
   box-shadow: 0 0 0 2.5px var(--festival-border) !important;
 }
 
-/* Accessibility: respect user prefers-reduced-motion */
+/* Diwali Primary CTA Buttons (Preserves destinations and accessibility) */
+[data-festival-theme="diwali"] .site-primary-cta,
+[data-festival-theme="diwali"] .festival-primary-cta {
+  background: var(--festival-button-bg, #D97706) !important;
+  color: var(--festival-button-text, #FFFFFF) !important;
+  box-shadow: var(--festival-glow, 0 4px 16px rgba(217, 119, 6, 0.3)) !important;
+}
+
+[data-festival-theme="diwali"] .site-primary-cta:hover,
+[data-festival-theme="diwali"] .festival-primary-cta:hover {
+  background: var(--festival-button-hover-bg, #B45309) !important;
+  box-shadow: 0 8px 24px rgba(217, 119, 6, 0.45) !important;
+}
+
+/* Accessibility: respect user prefers-reduced-motion (scoped, non-jarring) */
 @media (prefers-reduced-motion: reduce) {
-  [data-festival-theme] *,
-  [data-festival-theme] *::before,
-  [data-festival-theme] *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+  .festival-flame-path,
+  .festival-flame-inner,
+  .festival-flame-radiance,
+  .festival-motif-diwali,
+  .festival-motif-christmas,
+  .festival-diya-glow {
+    animation: none !important;
   }
 }
 

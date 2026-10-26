@@ -120,6 +120,47 @@
   background: #18181b;
 }
 
+/* --------------------------------------------------------------------------
+   Scoped Diwali Festive Theme (Auto-reverts when Diwali is inactive)
+   -------------------------------------------------------------------------- */
+:global([data-festival-theme="diwali"]) .topBar {
+  background: linear-gradient(90deg, #1c1306 0%, #2b1a07 50%, #1c1306 100%);
+  border-bottom: 1px solid rgba(217, 119, 6, 0.35);
+}
+
+:global([data-festival-theme="diwali"]) .link:hover {
+  color: #F59E0B;
+}
+
+:global([data-festival-theme="diwali"]) .link:focus-visible {
+  outline-color: #F59E0B;
+}
+
+:global([data-festival-theme="diwali"]) .membershipLink:hover {
+  background: #D97706;
+  color: #ffffff;
+  border-color: #D97706;
+}
+
+:global([data-festival-theme="diwali"]) .membershipBadge {
+  background: #F59E0B;
+}
+
+:global([data-festival-theme="diwali"]) .membershipLink:hover .membershipBadge {
+  background: #ffffff;
+}
+
+.diwaliGreetingPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(217, 119, 6, 0.22);
+  border: 1px solid rgba(245, 158, 11, 0.38);
+  padding: 2px 8px;
+  border-radius: 999px;
+  box-shadow: 0 2px 6px rgba(217, 119, 6, 0.15);
+}
+
 @media (max-width: 900px) {
   .inner {
     width: calc(100% - 32px);

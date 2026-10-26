@@ -13,6 +13,7 @@ import type {
 } from "../../models/FestivalTheme";
 import { formatIstHuman, parseIstToUtc } from "../../lib/festivals/timezone";
 import FestivalMotif from "../../(storefront)/_components/FestivalMotif";
+import DiyaCluster from "../../(storefront)/_components/DiyaCluster";
 import styles from "./FestivalThemeManagerPanel.module.css";
 
 interface FeedbackState {
@@ -580,7 +581,18 @@ export default function FestivalThemeManagerPanel() {
 
               {/* 1. Real Announcement Bar */}
               {showAnnouncement && announcementText ? (
-                <div className={styles.previewBar}>
+                <div
+                  className={styles.previewBar}
+                  style={
+                    currentRecord.preset === "DIWALI"
+                      ? {
+                          background: "linear-gradient(90deg, #1c1306 0%, #2b1a07 100%)",
+                          borderColor: "rgba(217, 119, 6, 0.4)",
+                          color: "#ffffff",
+                        }
+                      : undefined
+                  }
+                >
                   {enableDecorations ? (
                     <FestivalMotif preset={currentRecord.preset} variant="inline" size={13} />
                   ) : (
@@ -636,6 +648,18 @@ export default function FestivalThemeManagerPanel() {
                   </button>
                 </div>
               </div>
+
+              {/* 3b. Diwali "Make It Yours" Festive Moments Snippet */}
+              {currentRecord.preset === "DIWALI" && enableDecorations && (
+                <div
+                  className="p-2.5 rounded-xl border border-amber-300/60 bg-amber-50/70 flex flex-col items-center text-center gap-1.5 my-2 shadow-2xs"
+                >
+                  <DiyaCluster forceShow={true} showGreeting={true} size="sm" />
+                  <span className="text-[9px] font-heading font-extrabold uppercase tracking-widest text-amber-900">
+                    Make It Yours — Diwali Curation
+                  </span>
+                </div>
+              )}
 
               {/* 4. Product Detail Snippet */}
               <div className={styles.previewPdpSnippet}>

@@ -19,7 +19,7 @@ export default function CompactFinalCta() {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5">
           <Link
             href="#custom-order"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-brand-accent hover:bg-brand-accentHover text-brand-charcoal font-heading font-bold text-sm uppercase tracking-wider transition-all shadow-sm hover:shadow hover:-translate-y-0.5"
+            className="festival-primary-cta w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-brand-accent hover:bg-brand-accentHover text-brand-charcoal font-heading font-bold text-sm uppercase tracking-wider transition-all shadow-sm hover:shadow hover:-translate-y-0.5"
           >
             <span>CUSTOMIZE NOW</span>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

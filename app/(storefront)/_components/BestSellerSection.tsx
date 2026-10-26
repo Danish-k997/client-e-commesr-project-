@@ -26,6 +26,7 @@ export default function BestSellerSection() {
 
   const festivalTheme = useFestivalTheme();
   const isFestivalActive = Boolean(festivalTheme?.isActive && festivalTheme.preset !== "DEFAULT");
+  const isDiwaliActive = isFestivalActive && festivalTheme?.preset === "DIWALI";
   const showDecorations = isFestivalActive && festivalTheme?.enableDecorations;
 
   const productsQuery = useCustomerProducts({
@@ -45,17 +46,28 @@ export default function BestSellerSection() {
     <section className="py-16 md:py-24" id="bestsellers" aria-label="Bestsellers">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 pb-4 border-b border-brand-border gap-4">
+        <div
+          className={`flex flex-col sm:flex-row sm:items-end justify-between mb-8 pb-4 border-b ${
+            isDiwaliActive ? "border-amber-400/40" : "border-brand-border"
+          } gap-4`}
+        >
           <div>
-            <span className="text-[11px] font-bold tracking-widest uppercase text-brand-muted block mb-1">
-              CURATED SELECTION
-            </span>
+            {isDiwaliActive && showDecorations ? (
+              <span className="festival-moment-badge inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-heading font-extrabold tracking-widest uppercase text-amber-800 bg-amber-100/90 border border-amber-300/70 mb-1.5 shadow-2xs">
+                <FestivalMotif preset="DIWALI" variant="inline" size={13} />
+                <span>Diwali Festive Curation</span>
+              </span>
+            ) : (
+              <span className="text-[11px] font-bold tracking-widest uppercase text-brand-muted block mb-1">
+                CURATED SELECTION
+              </span>
+            )}
             <div className="flex items-center gap-2.5">
               <h2 className="font-heading font-extrabold text-3xl sm:text-4xl text-brand-charcoal tracking-tight">
                 BESTSELLERS
               </h2>
               {showDecorations && (
-                <FestivalMotif preset={festivalTheme?.preset} variant="heading" size={24} />
+                <FestivalMotif preset={festivalTheme?.preset} variant="heading" size={26} />
               )}
             </div>
             <p className="text-sm text-brand-muted mt-1">

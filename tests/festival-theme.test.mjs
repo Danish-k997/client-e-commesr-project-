@@ -626,3 +626,113 @@ test("Admin Status Badge: Computes accurate status badge (Active Now, Scheduled,
   );
 });
 
+// ============================================================================
+// PRODUCTION-GRADE DIWALI THEME & STOREFRONT EXPERIENCE UPGRADE TESTS
+// ============================================================================
+
+test("Diwali Theme: Preset metadata defines authentic warm gold, amber, and diya motif", () => {
+  const diwali = FESTIVAL_PRESETS_METADATA_TEST_SPEC.DIWALI;
+  assert.equal(diwali.preset, "DIWALI");
+  assert.equal(diwali.primaryAccent, "#D97706", "Primary accent must be warm amber gold");
+  assert.equal(diwali.secondaryAccent, "#F59E0B", "Secondary accent must be luminous amber");
+  assert.equal(diwali.buttonBg, "#D97706");
+  assert.equal(diwali.buttonText, "#FFFFFF");
+  assert.equal(diwali.motifName, "diya");
+  assert.match(diwali.defaultAnnouncement, /Shubh Deepavali/i);
+});
+
+test("Diwali Visual Isolation: Non-Diwali presets never assign diya motif", () => {
+  const nonDiwaliPresets = ["DEFAULT", "HOLI", "EID", "RAKSHA_BANDHAN", "CHRISTMAS"];
+  for (const preset of nonDiwaliPresets) {
+    const meta = FESTIVAL_PRESETS_METADATA_TEST_SPEC[preset];
+    assert.notEqual(meta.motifName, "diya", `Preset ${preset} must not use diya motif`);
+  }
+});
+
+test("Diya Cluster Logic: Evaluates visibility strictly when Diwali is active and decorations enabled", () => {
+  function shouldRenderDiyaCluster(theme) {
+    if (!theme) return false;
+    return Boolean(theme.isActive && theme.preset === "DIWALI" && theme.enableDecorations);
+  }
+
+  // 1. Active Diwali with decorations enabled -> Renders
+  assert.equal(
+    shouldRenderDiyaCluster({ isActive: true, preset: "DIWALI", enableDecorations: true }),
+    true
+  );
+
+  // 2. Active Diwali with decorations disabled by admin -> Does NOT render
+  assert.equal(
+    shouldRenderDiyaCluster({ isActive: true, preset: "DIWALI", enableDecorations: false }),
+    false
+  );
+
+  // 3. Active Holi with decorations enabled -> Does NOT render Diya cluster
+  assert.equal(
+    shouldRenderDiyaCluster({ isActive: true, preset: "HOLI", enableDecorations: true }),
+    false
+  );
+
+  // 4. Inactive/Expired Diwali theme -> Does NOT render Diya cluster
+  assert.equal(
+    shouldRenderDiyaCluster({ isActive: false, preset: "DIWALI", enableDecorations: true }),
+    false
+  );
+
+  // 5. Default brand state -> Does NOT render Diya cluster
+  assert.equal(
+    shouldRenderDiyaCluster(DEFAULT_THEME_PAYLOAD),
+    false
+  );
+});
+
+test("Announcement Bar State: Distinguishes active Diwali greeting from default pan-India announcement", () => {
+  function resolveAnnouncementContent(theme) {
+    const isFestivalActive = Boolean(
+      theme?.isActive && theme?.showAnnouncement && theme?.announcementText?.trim()
+    );
+
+    if (isFestivalActive) {
+      return {
+        isFestival: true,
+        text: theme.announcementText.trim(),
+        preset: theme.preset,
+        isDiwali: theme.preset === "DIWALI",
+      };
+    }
+
+    return {
+      isFestival: false,
+      text: "Fast pan-India delivery 🇮🇳 · Custom 3D prints made to order",
+      preset: "DEFAULT",
+      isDiwali: false,
+    };
+  }
+
+  // 1. Active Diwali theme
+  const diwaliTheme = {
+    isActive: true,
+    preset: "DIWALI",
+    showAnnouncement: true,
+    announcementText: "✦ Shubh Deepavali — 3D printed diyas, idols & festive gifts made to order",
+  };
+  const diwaliBar = resolveAnnouncementContent(diwaliTheme);
+  assert.equal(diwaliBar.isFestival, true);
+  assert.equal(diwaliBar.isDiwali, true);
+  assert.match(diwaliBar.text, /Shubh Deepavali/);
+
+  // 2. Theme expired or inactive -> Restores default Pan-India announcement
+  const inactiveTheme = { ...diwaliTheme, isActive: false };
+  const defaultBar = resolveAnnouncementContent(inactiveTheme);
+  assert.equal(defaultBar.isFestival, false);
+  assert.equal(defaultBar.isDiwali, false);
+  assert.equal(defaultBar.text, "Fast pan-India delivery 🇮🇳 · Custom 3D prints made to order");
+
+  // 3. Announcement explicitly hidden in admin
+  const hiddenAnnouncementTheme = { ...diwaliTheme, showAnnouncement: false };
+  const hiddenBar = resolveAnnouncementContent(hiddenAnnouncementTheme);
+  assert.equal(hiddenBar.isFestival, false);
+  assert.equal(hiddenBar.text, "Fast pan-India delivery 🇮🇳 · Custom 3D prints made to order");
+});
+
+
