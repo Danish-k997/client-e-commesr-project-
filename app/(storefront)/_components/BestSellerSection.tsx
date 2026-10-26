@@ -14,6 +14,7 @@ import "swiper/css/a11y";
 import { useCustomerProducts } from "../../lib/api";
 import { useFestivalTheme } from "./FestivalThemeProvider";
 import FestivalMotif from "./FestivalMotif";
+import DiwaliHeroMotif from "./DiwaliHeroMotif";
 import ProductCard from "./ProductCard";
 
 const AUTOPLAY_DELAY = 4500;
@@ -67,7 +68,11 @@ export default function BestSellerSection() {
                 BESTSELLERS
               </h2>
               {showDecorations && (
-                <FestivalMotif preset={festivalTheme?.preset} variant="heading" size={26} />
+                isDiwaliActive ? (
+                  <DiwaliHeroMotif size={52} className="ml-1" />
+                ) : (
+                  <FestivalMotif preset={festivalTheme?.preset} variant="heading" size={26} />
+                )
               )}
             </div>
             <p className="text-sm text-brand-muted mt-1">

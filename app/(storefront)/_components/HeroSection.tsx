@@ -10,6 +10,9 @@ import "swiper/css";
 import "swiper/css/autoplay";
 import "swiper/css/pagination";
 
+import { useFestivalTheme } from "./FestivalThemeProvider";
+import DiwaliHeroMotif from "./DiwaliHeroMotif";
+
 type HeroSlideApi = {
   _id: string;
   badge: string;
@@ -39,6 +42,11 @@ export default function HeroSection() {
   const [slides, setSlides] = useState<HeroSlideApi[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  const festivalTheme = useFestivalTheme();
+  const isFestivalActive = Boolean(festivalTheme?.isActive && festivalTheme.preset !== "DEFAULT");
+  const isDiwaliActive = isFestivalActive && festivalTheme?.preset === "DIWALI";
+  const showDecorations = isFestivalActive && festivalTheme?.enableDecorations;
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -264,7 +272,15 @@ export default function HeroSection() {
             return (
               <SwiperSlide key={slide._id} className="storefront-hero-slide">
                 <div className="storefront-hero-copy">
-                  <span className="hero-badge">{slide.badge}</span>
+                  <div className="flex items-center gap-2.5 mb-2 flex-wrap">
+                    <span className="hero-badge">{slide.badge}</span>
+                    {isDiwaliActive && showDecorations && (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-heading font-extrabold uppercase tracking-widest text-amber-800 bg-amber-50/95 border border-amber-300/70 shadow-2xs">
+                        <DiwaliHeroMotif size={20} />
+                        <span>Diwali Edition</span>
+                      </span>
+                    )}
+                  </div>
                   <h1 className="hero-title">
                     {slide.title.split("\n").map((line) => (
                       <span key={`${slide._id}-${line}`}>

@@ -1,6 +1,11 @@
+"use client";
+
 import Link from "next/link";
 
 import { INSTAGRAM_URL, WHATSAPP_NUMBER, WHATSAPP_URL } from "../../lib/contact";
+import { useFestivalTheme } from "./FestivalThemeProvider";
+import DiwaliHeroMotif from "./DiwaliHeroMotif";
+import RangoliMotif from "./RangoliMotif";
 import styles from "./SiteFooter.module.css";
 
 function InstagramIcon() {
@@ -33,9 +38,55 @@ function WhatsAppIcon() {
 
 export default function SiteFooter() {
   const currentYear = new Date().getFullYear();
+  const festivalTheme = useFestivalTheme();
+  const isFestivalActive = Boolean(festivalTheme?.isActive && festivalTheme.preset !== "DEFAULT");
+  const isDiwaliActive = isFestivalActive && festivalTheme?.preset === "DIWALI";
+  const showDecorations = isFestivalActive && festivalTheme?.enableDecorations;
 
   return (
     <footer className={styles.footer}>
+      {/* Diwali Festive Brand Chapter Banner */}
+      {isDiwaliActive && showDecorations && (
+        <div className={styles.festiveBand} aria-label="Diwali Festive Season">
+          {/* Decorative Toran / Bandhanwar Arch Pattern */}
+          <div className={styles.festiveToran} aria-hidden="true">
+            <svg viewBox="0 0 1200 24" preserveAspectRatio="none" className={styles.festiveToranSvg}>
+              <path
+                d="M0 0 Q50 20 100 0 Q150 20 200 0 Q250 20 300 0 Q350 20 400 0 Q450 20 500 0 Q550 20 600 0 Q650 20 700 0 Q750 20 800 0 Q850 20 900 0 Q950 20 1000 0 Q1050 20 1100 0 Q1150 20 1200 0"
+                fill="none"
+                stroke="#F59E0B"
+                strokeWidth="1.2"
+                strokeDasharray="4 3"
+                opacity="0.65"
+              />
+              {[50, 150, 250, 350, 450, 550, 650, 750, 850, 950, 1050, 1150].map((cx) => (
+                <circle key={cx} cx={cx} cy="10" r="2.2" fill="#FEF08A" opacity="0.8" />
+              ))}
+            </svg>
+          </div>
+
+          {/* Centered Festive Tribute */}
+          <div className={styles.festiveContent}>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 text-center sm:text-left">
+              <DiwaliHeroMotif size={48} />
+              <div className="flex flex-col items-center sm:items-start">
+                <span className={styles.festiveGreeting}>✦ SHUBH DEEPAVALI ✦</span>
+                <span className={styles.festiveSubtext}>
+                  May the festival of lights bring illumination, prosperity, and precision to your creations.
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Subtle Background Rangoli Watermark */}
+      {isDiwaliActive && showDecorations && (
+        <div className={styles.festiveWatermark} aria-hidden="true">
+          <RangoliMotif size={320} animateRotation={false} color="#D97706" secondaryColor="#F59E0B" showGlints={false} />
+        </div>
+      )}
+
       <div className={styles.inner}>
         <div className={styles.grid}>
           {/* Column 1: Brand */}
@@ -43,6 +94,12 @@ export default function SiteFooter() {
             <Link className={styles.wordmark} href="/" id="footer-brand-title">
               KASAR DIMENSIONS
             </Link>
+            {isDiwaliActive && showDecorations && (
+              <span className={styles.festiveBrandBadge}>
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                <span>Diwali Edition · Additive Studio</span>
+              </span>
+            )}
             <p className={styles.tagline}>
               Custom 3D-printed products, personalised designs and made-to-order fabrication built around your ideas.
             </p>

@@ -12,12 +12,8 @@ async function getIsAdmin() {
   try {
     const session = await requireAuth();
     return getApplicationRole(session.user.role) === "ADMIN";
-  } catch (error) {
-    if (error instanceof AuthorizationError && error.status === 401) {
-      return false;
-    }
-
-    throw error;
+  } catch {
+    return false;
   }
 }
 

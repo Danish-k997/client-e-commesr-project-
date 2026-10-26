@@ -12,18 +12,19 @@ export interface FestivalOfLightProps {
 }
 
 /**
- * "KASAR — Festival of Light" Signature Diwali Motion Experience.
+ * "KASAR — Festival of Light" Scroll-Linked Diwali Motion Experience.
  *
- * Implements a 4-stage choreography:
- * Stage 1 — Reveal: Ambient warm light blooms, rangoli geometry scales in, diya cluster illuminates.
- * Stage 2 — Greeting: "✦ SHUBH DEEPAVALI ✦" gracefully rises and fades into view.
- * Stage 3 — Living Details: Staggered independent flame flickers, gentle outer rangoli rotation, delicate glints.
- * Stage 4 — Calm Idle State: Settles into a calm, luxurious resting state without infinite looping.
+ * Implements a 4-stage progressive choreography:
+ * Stage 1 — Initial entrance: Delicate rangoli outlines emerge as section enters viewport.
+ * Stage 2 — Festive reveal: Multi-diya triad emerges, Shubh Deepavali greeting rises into view.
+ * Stage 3 — Scroll response: Outer rangoli ring and ambient halo gently respond to scroll progress
+ *             via direct CSS variable manipulation in requestAnimationFrame (0 React re-renders during scroll).
+ * Stage 4 — Resting state: Settles into a calm, luxurious idle state where only organic flame flickers continue.
  *
- * Fully integrated with Festival Theme Manager:
- * - Only renders when DIWALI theme is active and decorations enabled
- * - Respects enableAnimations toggle and prefers-reduced-motion media query
- * - Intensity setting (subtle/balanced/strong) adjusts glow and decorative presence
+ * Performance:
+ * - Direct GPU compositor transforms (transform, opacity).
+ * - Passive scroll listener attached ONLY while intersecting viewport.
+ * - Respects prefers-reduced-motion and enableAnimations toggle.
  */
 export default function FestivalOfLight({
   className = "",
@@ -44,11 +45,9 @@ export default function FestivalOfLight({
   const enableAnimations = forceShow || Boolean(festivalTheme?.enableAnimations ?? true);
   const intensity = festivalTheme?.intensity || "balanced";
 
-  // Trigger reveal via IntersectionObserver when entering viewport
   useEffect(() => {
-    if (!isDiwaliActive || hasTriggered) return;
+    if (!isDiwaliActive) return;
 
-    // If animations are turned off or user prefers reduced motion, settle immediately
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (!enableAnimations || mediaQuery.matches) {
       setAnimationStage("settled");
@@ -56,38 +55,66 @@ export default function FestivalOfLight({
       return;
     }
 
+    let rafId: number | null = null;
+    let isTrackingScroll = false;
+
+    function handleScroll() {
+      if (rafId !== null) return;
+      rafId = window.requestAnimationFrame(() => {
+        rafId = null;
+        if (!containerRef.current) return;
+        const rect = containerRef.current.getBoundingClientRect();
+        const vh = window.innerHeight || 800;
+        // Normalized progress: 0 when top enters bottom of screen, 1 when bottom leaves top
+        const progress = Math.min(Math.max((vh - rect.top) / (vh + rect.height * 0.8), 0), 1);
+        containerRef.current.style.setProperty("--diwali-scroll-progress", progress.toFixed(3));
+      });
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         const [entry] = entries;
-        if (entry.isIntersecting && !hasTriggered) {
-          setHasTriggered(true);
+        if (entry.isIntersecting) {
+          if (!isTrackingScroll) {
+            isTrackingScroll = true;
+            window.addEventListener("scroll", handleScroll, { passive: true });
+            handleScroll();
+          }
 
-          // Stage 1: Reveal (0s - 400ms)
-          setAnimationStage("revealing");
+          if (!hasTriggered) {
+            setHasTriggered(true);
+            setAnimationStage("revealing");
 
-          // Stage 2: Greeting (500ms)
-          const t1 = setTimeout(() => {
-            setAnimationStage("greeting");
-          }, 500);
+            const t1 = setTimeout(() => {
+              setAnimationStage("greeting");
+            }, 500);
 
-          // Stage 3: Living Details (1000ms)
-          const t2 = setTimeout(() => {
-            setAnimationStage("living");
-          }, 1100);
+            const t2 = setTimeout(() => {
+              setAnimationStage("living");
+            }, 1100);
 
-          // Stage 4: Settled Calm Idle State (2200ms)
-          const t3 = setTimeout(() => {
-            setAnimationStage("settled");
-          }, 2400);
+            const t3 = setTimeout(() => {
+              setAnimationStage("settled");
+            }, 2400);
 
-          return () => {
-            clearTimeout(t1);
-            clearTimeout(t2);
-            clearTimeout(t3);
-          };
+            return () => {
+              clearTimeout(t1);
+              clearTimeout(t2);
+              clearTimeout(t3);
+            };
+          }
+        } else {
+          if (isTrackingScroll) {
+            isTrackingScroll = false;
+            window.removeEventListener("scroll", handleScroll);
+            if (rafId !== null) {
+              cancelAnimationFrame(rafId);
+              rafId = null;
+            }
+          }
         }
       },
-      { threshold: 0.25 }
+      { threshold: [0, 0.15, 0.35, 0.7] }
     );
 
     const currentEl = containerRef.current;
@@ -96,6 +123,12 @@ export default function FestivalOfLight({
     }
 
     return () => {
+      if (isTrackingScroll) {
+        window.removeEventListener("scroll", handleScroll);
+      }
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
       if (currentEl) {
         observer.unobserve(currentEl);
       }
@@ -137,11 +170,17 @@ export default function FestivalOfLight({
 
       {/* Central Visual Composition: Rangoli Mandala + Diya Triad */}
       <div className="relative flex items-center justify-center">
-        {/* Layer 1: Geometric Rangoli Mandala Base */}
+        {/* Layer 1: Geometric Rangoli Mandala Base with Scroll-Linked Rotation */}
         <div
           className={`transition-all duration-700 ease-out transform ${
             isRevealed ? "scale-100 opacity-100" : "scale-90 opacity-0"
           }`}
+          style={{
+            transform: enableAnimations
+              ? "rotate(calc((var(--diwali-scroll-progress, 0.5) - 0.5) * 44deg)) scale(calc(0.96 + var(--diwali-scroll-progress, 0.5) * 0.08))"
+              : undefined,
+            willChange: enableAnimations ? "transform" : undefined,
+          }}
           aria-hidden="true"
         >
           <RangoliMotif
@@ -153,12 +192,18 @@ export default function FestivalOfLight({
           />
         </div>
 
-        {/* Layer 2: 3-Diya Arrangement Mounted Over Rangoli Center */}
+        {/* Layer 2: 3-Diya Arrangement Mounted Over Rangoli Center with Subtle Scroll Shift */}
         <div
           className={`absolute flex items-end justify-center gap-1.5 transition-all duration-700 delay-150 transform ${
             isRevealed ? "scale-100 opacity-100 translate-y-0" : "scale-90 opacity-0 translate-y-2"
           }`}
-          style={{ bottom: compact ? "10px" : "16px" }}
+          style={{
+            bottom: compact ? "10px" : "16px",
+            transform: enableAnimations
+              ? "translateY(calc((1 - min(var(--diwali-scroll-progress, 0.5) * 1.5, 1)) * 6px + (var(--diwali-scroll-progress, 0.5) - 0.5) * -5px))"
+              : undefined,
+            willChange: enableAnimations ? "transform" : undefined,
+          }}
           aria-hidden="true"
         >
           {/* Left Flanking Diya */}

@@ -255,3 +255,94 @@
     grid-column: auto;
   }
 }
+
+/* ==========================================================================
+   DIWALI FESTIVE FOOTER CHAPTER — "KASAR — Festival of Light"
+   ========================================================================== */
+.festiveBand {
+  position: relative;
+  width: 100%;
+  background: linear-gradient(180deg, rgba(254, 243, 199, 0.45) 0%, rgba(255, 255, 255, 0.15) 100%);
+  border-bottom: 1px solid rgba(245, 158, 11, 0.3);
+  padding: 20px 24px;
+  overflow: hidden;
+}
+
+.festiveToran {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 18px;
+  pointer-events: none;
+  opacity: 0.75;
+}
+
+.festiveToranSvg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.festiveContent {
+  width: min(100% - 48px, 1440px);
+  margin-inline: auto;
+  position: relative;
+  z-index: 1;
+}
+
+.festiveGreeting {
+  font-family: var(--font-heading), var(--font-outfit), sans-serif;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #B45309;
+}
+
+.festiveSubtext {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-top: 2px;
+}
+
+.festiveBrandBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background-color: rgba(254, 243, 199, 0.8);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  color: #92400E;
+  font-size: 0.65rem;
+  font-weight: 750;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  width: fit-content;
+}
+
+.festiveWatermark {
+  position: absolute;
+  top: -40px;
+  right: -50px;
+  pointer-events: none;
+  opacity: 0.045;
+  z-index: 0;
+}
+
+@media (max-width: 640px) {
+  .festiveBand {
+    padding: 16px 16px;
+  }
+
+  .festiveGreeting {
+    font-size: 0.65rem;
+  }
+
+  .festiveSubtext {
+    font-size: 0.72rem;
+  }
+}
+

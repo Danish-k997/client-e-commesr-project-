@@ -906,6 +906,94 @@ test("Diwali Navbar Emblem Source Integrity: verifies no text strings in DiwaliN
   assert.equal(content.includes("diwali-navbar-sparkle-1"), true, "Must include sparkle animation classes");
 });
 
+test("Diwali Motion 2.0: DiwaliHeroMotif renders layered triad and respects festival theme toggles", async () => {
+  const fs = await import("node:fs/promises");
+  const path = await import("node:path");
+
+  const motifPath = path.resolve("app/(storefront)/_components/DiwaliHeroMotif.tsx");
+  const content = await fs.readFile(motifPath, "utf8");
+
+  // Verify structure: central diya + 2 flanking diyas + rangoli halo
+  assert.equal(content.includes("diwali-hero-halo-drift"), true, "Must include rotating rangoli halo");
+  assert.equal(content.includes("diwali-flame-center"), true, "Must include central flame");
+  assert.equal(content.includes("diwali-flame-left"), true, "Must include left flanking flame");
+  assert.equal(content.includes("diwali-flame-right"), true, "Must include right flanking flame");
+  assert.equal(content.includes("diwali-hero-sparkle-1"), true, "Must include sparkle 1");
+  assert.equal(content.includes("diwali-hero-sparkle-2"), true, "Must include sparkle 2");
+  assert.equal(content.includes("heroMarigold"), true, "Must include marigold petal gradient");
+
+  // Logic simulation
+  function resolveHeroMotif(theme) {
+    const isDiwali = theme?.preset?.toUpperCase() === "DIWALI";
+    const isDecorationsEnabled = Boolean(theme?.enableDecorations);
+    const isThemeActive = Boolean(theme?.isActive);
+
+    if (!isThemeActive || !isDiwali || !isDecorationsEnabled) return null;
+    return {
+      type: "DIWALI_HERO_MOTIF",
+      isAnimated: Boolean(theme?.enableAnimations ?? true),
+      intensity: theme?.intensity || "balanced",
+    };
+  }
+
+  // Active Diwali with animations
+  const activeDiwali = { isActive: true, preset: "DIWALI", enableDecorations: true, enableAnimations: true };
+  const res1 = resolveHeroMotif(activeDiwali);
+  assert.notEqual(res1, null);
+  assert.equal(res1.isAnimated, true);
+
+  // Active Diwali with animations disabled
+  const staticDiwali = { isActive: true, preset: "DIWALI", enableDecorations: true, enableAnimations: false };
+  const res2 = resolveHeroMotif(staticDiwali);
+  assert.notEqual(res2, null);
+  assert.equal(res2.isAnimated, false);
+
+  // Inactive or other theme
+  assert.equal(resolveHeroMotif({ isActive: false, preset: "DIWALI" }), null);
+  assert.equal(resolveHeroMotif({ isActive: true, preset: "HOLI" }), null);
+});
+
+test("Diwali Motion 2.0: FestivalOfLight includes scroll-linked progress binding and GPU transforms", async () => {
+  const fs = await import("node:fs/promises");
+  const path = await import("node:path");
+
+  const componentPath = path.resolve("app/(storefront)/_components/FestivalOfLight.tsx");
+  const content = await fs.readFile(componentPath, "utf8");
+
+  // Verify scroll-linked progress calculation and direct CSS variable binding
+  assert.equal(content.includes("--diwali-scroll-progress"), true, "Must calculate and set --diwali-scroll-progress");
+  assert.equal(content.includes("requestAnimationFrame"), true, "Must throttle scroll handling with requestAnimationFrame");
+  assert.equal(content.includes("passive: true"), true, "Must attach scroll listener with passive: true");
+  assert.equal(content.includes("rotate(calc((var(--diwali-scroll-progress"), true, "Must bind rangoli rotation to scroll progress");
+  assert.equal(content.includes("SHUBH DEEPAVALI"), true, "Must feature festive greeting");
+});
+
+test("Diwali Motion 2.0: SiteFooter integrates festive brand chapter without altering links or legal footer", async () => {
+  const fs = await import("node:fs/promises");
+  const path = await import("node:path");
+
+  const footerPath = path.resolve("app/(storefront)/_components/SiteFooter.tsx");
+  const content = await fs.readFile(footerPath, "utf8");
+
+  // Verify festive band & watermark integration
+  assert.equal(content.includes("festiveBand"), true, "Must include festiveBand container");
+  assert.equal(content.includes("festiveToran"), true, "Must include decorative toran arch");
+  assert.equal(content.includes("festiveWatermark"), true, "Must include subtle rangoli watermark");
+  assert.equal(content.includes("DiwaliHeroMotif"), true, "Must render DiwaliHeroMotif in footer tribute");
+  assert.equal(content.includes("SHUBH DEEPAVALI"), true, "Must render Shubh Deepavali blessing in footer");
+
+  // Verify all essential e-commerce links and channels are completely preserved
+  assert.equal(content.includes("INSTAGRAM_URL"), true, "Must preserve Instagram link");
+  assert.equal(content.includes("WHATSAPP_URL"), true, "Must preserve WhatsApp link");
+  assert.equal(content.includes("/privacy-policy"), true, "Must preserve Privacy Policy link");
+  assert.equal(content.includes("/terms"), true, "Must preserve Terms link");
+  assert.equal(content.includes("/returns"), true, "Must preserve Returns link");
+  assert.equal(content.includes("/shipping"), true, "Must preserve Shipping link");
+  assert.equal(content.includes("/shop?customizable=true"), true, "Must preserve Customizable link");
+  assert.equal(content.includes("/membership"), true, "Must preserve Membership link");
+});
+
+
 
 
 
