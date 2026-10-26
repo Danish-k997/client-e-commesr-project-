@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 import { AuthorizationError, requireAuth } from "../lib/authorization";
 import { getApplicationRole } from "../lib/roles";
-import FloatingWhatsAppButton from "./_components/FloatingWhatsAppButton";
+import DiwaliFloatingMedallion from "./_components/DiwaliFloatingMedallion";
 import GlobalHeader from "./_components/GlobalHeader";
 import MobileBottomDock from "./_components/MobileBottomDock";
 import SiteFooter from "./_components/SiteFooter";
@@ -38,7 +38,7 @@ export default async function StorefrontLayout({
         </main>
         <SiteFooter />
         <MobileBottomDock />
-        <FloatingWhatsAppButton />
+        <DiwaliFloatingMedallion />
       </div>
     </FestivalThemeProvider>
   );

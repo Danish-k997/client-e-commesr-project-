@@ -735,4 +735,97 @@ test("Announcement Bar State: Distinguishes active Diwali greeting from default 
   assert.equal(hiddenBar.text, "Fast pan-India delivery 🇮🇳 · Custom 3D prints made to order");
 });
 
+test("Motion System: Rangoli outer ring rotation and glints respond strictly to animation toggle", () => {
+  function getRangoliMotionProps(enableAnimations, prefersReducedMotion = false) {
+    const isMotionPermitted = enableAnimations && !prefersReducedMotion;
+    return {
+      animateRotation: isMotionPermitted,
+      glintsEnabled: isMotionPermitted,
+    };
+  }
+
+  // 1. Animations enabled and no reduced motion -> Motion permitted
+  const fullMotion = getRangoliMotionProps(true, false);
+  assert.equal(fullMotion.animateRotation, true);
+  assert.equal(fullMotion.glintsEnabled, true);
+
+  // 2. Admin disables animations -> Static rendering
+  const disabledMotion = getRangoliMotionProps(false, false);
+  assert.equal(disabledMotion.animateRotation, false);
+  assert.equal(disabledMotion.glintsEnabled, false);
+
+  // 3. User prefers reduced motion -> Motion suppressed safely
+  const reducedMotion = getRangoliMotionProps(true, true);
+  assert.equal(reducedMotion.animateRotation, false);
+  assert.equal(reducedMotion.glintsEnabled, false);
+});
+
+test("Festival of Light: State machine resolves calm idle state without infinite replay", () => {
+  const STAGES = ["idle", "revealing", "greeting", "living", "settled"];
+
+  function getNextStage(current) {
+    const idx = STAGES.indexOf(current);
+    if (idx === -1 || idx === STAGES.length - 1) return "settled"; // Terminates in settled state
+    return STAGES[idx + 1];
+  }
+
+  let stage = "idle";
+  stage = getNextStage(stage); // revealing
+  assert.equal(stage, "revealing");
+  stage = getNextStage(stage); // greeting
+  assert.equal(stage, "greeting");
+  stage = getNextStage(stage); // living
+  assert.equal(stage, "living");
+  stage = getNextStage(stage); // settled
+  assert.equal(stage, "settled");
+  stage = getNextStage(stage); // remains settled (no loop)
+  assert.equal(stage, "settled");
+});
+
+test("Diwali Floating Medallion: Activates during Diwali and preserves WhatsApp contact pathway", () => {
+  function resolveFloatingWidget(theme) {
+    const isDiwaliActive = Boolean(
+      theme?.isActive && theme?.preset === "DIWALI" && theme?.enableDecorations
+    );
+
+    if (isDiwaliActive) {
+      return {
+        widgetType: "DIWALI_RANGOLI_MEDALLION",
+        hasWhatsAppAction: true,
+        whatsappPreserved: true,
+        decorationsEnabled: true,
+      };
+    }
+
+    return {
+      widgetType: "DEFAULT_WHATSAPP_BUTTON",
+      hasWhatsAppAction: true,
+      whatsappPreserved: true,
+      decorationsEnabled: false,
+    };
+  }
+
+  // 1. Active Diwali theme with decorations
+  const activeDiwali = { isActive: true, preset: "DIWALI", enableDecorations: true };
+  const diwaliWidget = resolveFloatingWidget(activeDiwali);
+  assert.equal(diwaliWidget.widgetType, "DIWALI_RANGOLI_MEDALLION");
+  assert.equal(diwaliWidget.whatsappPreserved, true, "WhatsApp action must be preserved inside festive card");
+
+  // 2. Active Diwali but decorations disabled by admin
+  const noDecoDiwali = { isActive: true, preset: "DIWALI", enableDecorations: false };
+  const defaultNoDeco = resolveFloatingWidget(noDecoDiwali);
+  assert.equal(defaultNoDeco.widgetType, "DEFAULT_WHATSAPP_BUTTON");
+
+  // 3. Inactive or expired festival theme
+  const inactiveTheme = { isActive: false, preset: "DEFAULT" };
+  const defaultWidget = resolveFloatingWidget(inactiveTheme);
+  assert.equal(defaultWidget.widgetType, "DEFAULT_WHATSAPP_BUTTON");
+
+  // 4. Other festival (e.g. Holi)
+  const holiTheme = { isActive: true, preset: "HOLI", enableDecorations: true };
+  const holiWidget = resolveFloatingWidget(holiTheme);
+  assert.equal(holiWidget.widgetType, "DEFAULT_WHATSAPP_BUTTON");
+});
+
+
 

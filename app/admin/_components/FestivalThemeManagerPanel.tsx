@@ -14,6 +14,8 @@ import type {
 import { formatIstHuman, parseIstToUtc } from "../../lib/festivals/timezone";
 import FestivalMotif from "../../(storefront)/_components/FestivalMotif";
 import DiyaCluster from "../../(storefront)/_components/DiyaCluster";
+import FestivalOfLight from "../../(storefront)/_components/FestivalOfLight";
+import RangoliMotif from "../../(storefront)/_components/RangoliMotif";
 import styles from "./FestivalThemeManagerPanel.module.css";
 
 interface FeedbackState {
@@ -594,7 +596,12 @@ export default function FestivalThemeManagerPanel() {
                   }
                 >
                   {enableDecorations ? (
-                    <FestivalMotif preset={currentRecord.preset} variant="inline" size={13} />
+                    <>
+                      {currentRecord.preset === "DIWALI" && (
+                        <RangoliMotif size={13} showGlints={false} color="#FDE047" secondaryColor="#F59E0B" animateRotation={enableAnimations} />
+                      )}
+                      <FestivalMotif preset={currentRecord.preset} variant="inline" size={13} />
+                    </>
                   ) : (
                     <span>{currentRecord.metadata.symbol}</span>
                   )}
@@ -649,15 +656,12 @@ export default function FestivalThemeManagerPanel() {
                 </div>
               </div>
 
-              {/* 3b. Diwali "Make It Yours" Festive Moments Snippet */}
+              {/* 3b. Diwali Signature Motion Preview */}
               {currentRecord.preset === "DIWALI" && enableDecorations && (
                 <div
-                  className="p-2.5 rounded-xl border border-amber-300/60 bg-amber-50/70 flex flex-col items-center text-center gap-1.5 my-2 shadow-2xs"
+                  className="p-2 rounded-xl border border-amber-300/60 bg-amber-50/70 flex flex-col items-center text-center gap-1 my-2 shadow-2xs overflow-hidden"
                 >
-                  <DiyaCluster forceShow={true} showGreeting={true} size="sm" />
-                  <span className="text-[9px] font-heading font-extrabold uppercase tracking-widest text-amber-900">
-                    Make It Yours — Diwali Curation
-                  </span>
+                  <FestivalOfLight forceShow={true} compact={true} />
                 </div>
               )}
 

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useCustomerProducts } from "../../lib/api";
 import { useFestivalTheme } from "./FestivalThemeProvider";
 import FestivalMotif from "./FestivalMotif";
-import DiyaCluster from "./DiyaCluster";
+import FestivalOfLight from "./FestivalOfLight";
 import ProductCard from "./ProductCard";
 import styles from "./CustomizableProductsSection.module.css";
 
@@ -52,8 +52,8 @@ export default function CustomizableProductsSection() {
     <section className={styles["customizable-section"]} aria-label="Customizable products">
       <header className={styles["customizable-header"]}>
         {isDiwaliActive && showDecorations ? (
-          <div className="mb-3 flex justify-start">
-            <DiyaCluster showGreeting={true} greetingText="Shubh Deepavali" size="md" align="start" />
+          <div className="mb-4 flex flex-col items-start">
+            <FestivalOfLight compact={false} />
           </div>
         ) : (
           <p className="eyebrow">CUSTOM MADE</p>

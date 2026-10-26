@@ -4,6 +4,7 @@ import Link from "next/link";
 import { CONTACT_PHONE_URL, FORMATTED_PHONE, WHATSAPP_URL } from "../../lib/contact";
 import { useFestivalTheme } from "./FestivalThemeProvider";
 import FestivalMotif from "./FestivalMotif";
+import RangoliMotif from "./RangoliMotif";
 import styles from "./TopAnnouncementBar.module.css";
 
 function PhoneIcon() {
@@ -73,7 +74,14 @@ export default function TopAnnouncementBar() {
             <div className={styles.festivalGreeting}>
               {festivalTheme?.preset === "DIWALI" && festivalTheme?.enableDecorations ? (
                 <span className={styles.diwaliGreetingPill}>
-                  <FestivalMotif preset="DIWALI" variant="inline" size={16} />
+                  <RangoliMotif
+                    size={16}
+                    animateRotation={Boolean(festivalTheme.enableAnimations ?? true)}
+                    showGlints={false}
+                    color="#FDE047"
+                    secondaryColor="#F59E0B"
+                  />
+                  <FestivalMotif preset="DIWALI" variant="inline" size={15} />
                   <span className={styles.festivalText}>{festivalTheme.announcementText}</span>
                 </span>
               ) : (

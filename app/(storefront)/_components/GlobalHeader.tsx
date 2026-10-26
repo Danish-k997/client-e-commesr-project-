@@ -292,15 +292,25 @@ export default function GlobalHeader({ isAdmin: initialIsAdmin }: GlobalHeaderPr
           </div>
           {isFestivalActive && (
             <span
-              className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ml-1"
+              className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-heading font-extrabold uppercase tracking-widest ml-1 shadow-2xs transition-all duration-300"
               style={{
-                background: "var(--festival-surface-tint, rgba(254, 243, 199, 0.4))",
-                border: "1px solid var(--festival-border, rgba(217, 119, 6, 0.4))",
+                background:
+                  festivalTheme?.preset === "DIWALI"
+                    ? "linear-gradient(135deg, rgba(254, 243, 199, 0.65) 0%, rgba(254, 249, 195, 0.35) 100%)"
+                    : "var(--festival-surface-tint, rgba(254, 243, 199, 0.4))",
+                border:
+                  festivalTheme?.preset === "DIWALI"
+                    ? "1px solid rgba(217, 119, 6, 0.55)"
+                    : "1px solid var(--festival-border, rgba(217, 119, 6, 0.4))",
                 color: "var(--festival-accent, #D97706)",
+                boxShadow:
+                  festivalTheme?.preset === "DIWALI"
+                    ? "0 1px 6px rgba(217, 119, 6, 0.15)"
+                    : "none",
               }}
             >
               {showDecorations && (
-                <FestivalMotif preset={festivalTheme?.preset} variant="badge" size={11} />
+                <FestivalMotif preset={festivalTheme?.preset} variant="badge" size={12} />
               )}
               <span>{festivalTheme?.title.split(" ")[0]} Edition</span>
             </span>

@@ -151,14 +151,27 @@
 }
 
 .diwaliGreetingPill {
+  position: relative;
+  overflow: hidden;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  background: rgba(217, 119, 6, 0.22);
-  border: 1px solid rgba(245, 158, 11, 0.38);
-  padding: 2px 8px;
+  gap: 7px;
+  background: linear-gradient(110deg, rgba(217, 119, 6, 0.22) 0%, rgba(245, 158, 11, 0.35) 45%, rgba(254, 240, 138, 0.25) 50%, rgba(217, 119, 6, 0.22) 100%);
+  background-size: 200% 100%;
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  padding: 2px 10px;
   border-radius: 999px;
-  box-shadow: 0 2px 6px rgba(217, 119, 6, 0.15);
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.2);
+  animation: pillLightSweep 6s ease-in-out infinite;
+}
+
+@keyframes pillLightSweep {
+  0%, 100% {
+    background-position: 100% 0;
+  }
+  50% {
+    background-position: 0 0;
+  }
 }
 
 @media (max-width: 900px) {

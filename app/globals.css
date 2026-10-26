@@ -4255,10 +4255,47 @@ textarea:focus-visible {
   animation: festiveGentlePulse 3.2s ease-in-out infinite;
 }
 
+/* Rangoli sacred geometric rotations & stellar glints */
+@keyframes rangoliSlowSpin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes glintTwinkle {
+  0%, 100% {
+    transform: scale(0.65);
+    opacity: 0.35;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+[data-festival-animations="true"] .festival-rangoli-outer-ring {
+  animation: rangoliSlowSpin 26s linear infinite;
+}
+
+[data-festival-animations="true"] .festival-glint-1 {
+  transform-origin: 82px 24px;
+  animation: glintTwinkle 3.2s ease-in-out infinite;
+}
+
+[data-festival-animations="true"] .festival-glint-2 {
+  transform-origin: 18px 83px;
+  animation: glintTwinkle 3.2s ease-in-out 1.6s infinite;
+}
+
 /* Feature Toggle: Disable Decorations */
 [data-festival-decorations="false"] .festival-motif,
 [data-festival-decorations="false"] .festival-diya-cluster-container,
-[data-festival-decorations="false"] .festival-moment-badge {
+[data-festival-decorations="false"] .festival-moment-badge,
+[data-festival-decorations="false"] .festival-rangoli-svg,
+[data-festival-decorations="false"] .festival-of-light-container {
   display: none !important;
 }
 
@@ -4268,6 +4305,10 @@ textarea:focus-visible {
 [data-festival-animations="false"] .festival-flame-inner,
 [data-festival-animations="false"] .festival-flame-radiance,
 [data-festival-animations="false"] .festival-diya-glow,
+[data-festival-animations="false"] .festival-rangoli-outer-ring,
+[data-festival-animations="false"] .festival-glint-1,
+[data-festival-animations="false"] .festival-glint-2,
+[data-festival-animations="false"] .festival-of-light-container *,
 [data-festival-animations="false"] .festival-diya-cluster-container * {
   animation: none !important;
 }
@@ -4281,6 +4322,10 @@ textarea:focus-visible {
   opacity: 0.35 !important;
 }
 
+[data-festival-intensity="subtle"] .festival-rangoli-outer-ring {
+  opacity: 0.7;
+}
+
 [data-festival-intensity="strong"] .festival-motif {
   filter: drop-shadow(0 2px 6px var(--festival-accent));
 }
@@ -4292,6 +4337,10 @@ textarea:focus-visible {
 [data-festival-intensity="strong"] .festival-diya-glow {
   opacity: 1 !important;
   transform: scale(1.15);
+}
+
+[data-festival-intensity="strong"] .festival-rangoli-svg {
+  filter: drop-shadow(0 3px 12px rgba(217, 119, 6, 0.35));
 }
 
 /* Storefront Search Focus Highlight */
@@ -4321,7 +4370,11 @@ textarea:focus-visible {
   .festival-flame-radiance,
   .festival-motif-diwali,
   .festival-motif-christmas,
-  .festival-diya-glow {
+  .festival-diya-glow,
+  .festival-rangoli-outer-ring,
+  .festival-glint-1,
+  .festival-glint-2,
+  .festival-of-light-container * {
     animation: none !important;
   }
 }
