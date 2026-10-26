@@ -4363,6 +4363,167 @@ textarea:focus-visible {
   box-shadow: 0 8px 24px rgba(217, 119, 6, 0.45) !important;
 }
 
+/* ==========================================================================
+   DIWALI NAVBAR EMBLEM — COMPACT ANIMATED VISUAL MOTIF
+   Replaces wide text badges with an authentic, GPU-accelerated festive emblem.
+   Zero layout shift: scale/filter animations are compositor-only within fixed box.
+   ========================================================================== */
+.diwali-navbar-emblem-wrapper {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+  pointer-events: none;
+  margin-left: 2px;
+  vertical-align: middle;
+}
+
+@media (max-width: 640px) {
+  .diwali-navbar-emblem-wrapper {
+    width: 28px;
+    height: 28px;
+    margin-left: 1px;
+  }
+}
+
+@media (max-width: 360px) {
+  .diwali-navbar-emblem-wrapper {
+    width: 24px;
+    height: 24px;
+    margin-left: 0;
+  }
+}
+
+.diwali-navbar-emblem-svg {
+  display: block;
+  overflow: visible;
+}
+
+.diwali-navbar-emblem-inner {
+  transform-origin: center center;
+  animation: diwaliNavbarBreathe 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  will-change: transform, filter;
+}
+
+@keyframes diwaliNavbarBreathe {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 1px 4px rgba(245, 158, 11, 0.2));
+  }
+  50% {
+    transform: scale(1.09);
+    filter: drop-shadow(0 2px 8px rgba(245, 158, 11, 0.42));
+  }
+}
+
+.diwali-navbar-flame {
+  transform-origin: 20px 19px;
+  animation: diwaliNavbarFlame 2.1s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes diwaliNavbarFlame {
+  0%, 100% {
+    transform: translateY(0) scale(1) skewX(0deg);
+    opacity: 0.94;
+  }
+  25% {
+    transform: translateY(-0.4px) scale(1.03, 1.05) skewX(0.7deg);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(0.3px) scale(0.97, 0.96) skewX(-0.5deg);
+    opacity: 0.92;
+  }
+  75% {
+    transform: translateY(-0.2px) scale(1.02, 1.02) skewX(0.4deg);
+    opacity: 0.98;
+  }
+}
+
+.diwali-navbar-sparkle-1 {
+  transform-origin: 29px 9px;
+  animation: diwaliNavbarSparkle1 4.6s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes diwaliNavbarSparkle1 {
+  0%, 30% {
+    opacity: 0;
+    transform: scale(0) rotate(0deg);
+  }
+  38% {
+    opacity: 1;
+    transform: scale(1.15) rotate(45deg);
+  }
+  46% {
+    opacity: 0.85;
+    transform: scale(0.9) rotate(70deg);
+  }
+  55%, 100% {
+    opacity: 0;
+    transform: scale(0) rotate(90deg);
+  }
+}
+
+.diwali-navbar-sparkle-2 {
+  transform-origin: 10px 11px;
+  animation: diwaliNavbarSparkle2 5.2s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes diwaliNavbarSparkle2 {
+  0%, 65% {
+    opacity: 0;
+    transform: scale(0) rotate(0deg);
+  }
+  73% {
+    opacity: 1;
+    transform: scale(1.15) rotate(-45deg);
+  }
+  81% {
+    opacity: 0.8;
+    transform: scale(0.85) rotate(-70deg);
+  }
+  90%, 100% {
+    opacity: 0;
+    transform: scale(0) rotate(-90deg);
+  }
+}
+
+.diwali-navbar-rangoli-halo {
+  transform-origin: 20px 20px;
+  animation: diwaliNavbarHaloDrift 45s linear infinite;
+  will-change: transform;
+}
+
+@keyframes diwaliNavbarHaloDrift {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Scoped Theme Manager Animation Toggle */
+[data-festival-animations="false"] .diwali-navbar-emblem-inner,
+[data-festival-animations="false"] .diwali-navbar-flame,
+[data-festival-animations="false"] .diwali-navbar-sparkle-1,
+[data-festival-animations="false"] .diwali-navbar-sparkle-2,
+[data-festival-animations="false"] .diwali-navbar-rangoli-halo {
+  animation: none !important;
+  transform: none !important;
+}
+
+[data-festival-animations="false"] .diwali-navbar-sparkle-1,
+[data-festival-animations="false"] .diwali-navbar-sparkle-2 {
+  opacity: 0 !important;
+}
+
 /* Accessibility: respect user prefers-reduced-motion (scoped, non-jarring) */
 @media (prefers-reduced-motion: reduce) {
   .festival-flame-path,
@@ -4374,8 +4535,19 @@ textarea:focus-visible {
   .festival-rangoli-outer-ring,
   .festival-glint-1,
   .festival-glint-2,
-  .festival-of-light-container * {
+  .festival-of-light-container *,
+  .diwali-navbar-emblem-inner,
+  .diwali-navbar-flame,
+  .diwali-navbar-sparkle-1,
+  .diwali-navbar-sparkle-2,
+  .diwali-navbar-rangoli-halo {
     animation: none !important;
+    transform: none !important;
+  }
+
+  .diwali-navbar-sparkle-1,
+  .diwali-navbar-sparkle-2 {
+    opacity: 0 !important;
   }
 }
 

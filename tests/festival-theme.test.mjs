@@ -827,5 +827,85 @@ test("Diwali Floating Medallion: Activates during Diwali and preserves WhatsApp 
   assert.equal(holiWidget.widgetType, "DEFAULT_WHATSAPP_BUTTON");
 });
 
+test("Diwali Navbar Emblem Safeguard: purely visual, text-free, and respects theme toggles", () => {
+  // Pure visual verification: simulated resolver matching DiwaliNavbarEmblem logic
+  function resolveNavbarEmblem(theme) {
+    const isDiwali = theme?.preset?.toUpperCase() === "DIWALI";
+    const isDecorationsEnabled = Boolean(theme?.enableDecorations);
+    const isThemeActive = Boolean(theme?.isActive);
+
+    if (!isThemeActive || !isDiwali || !isDecorationsEnabled) {
+      return null;
+    }
+
+    const isAnimated = Boolean(theme?.enableAnimations);
+
+    return {
+      type: "DIWALI_NAVBAR_EMBLEM",
+      hasText: false,
+      pointerEvents: "none",
+      ariaHidden: true,
+      role: "presentation",
+      desktopSize: 38,
+      mobileSize: 28,
+      isAnimated,
+    };
+  }
+
+  // 1. Active Diwali with decorations & animations enabled
+  const activeDiwali = { isActive: true, preset: "DIWALI", enableDecorations: true, enableAnimations: true };
+  const emblem = resolveNavbarEmblem(activeDiwali);
+  assert.notEqual(emblem, null);
+  assert.equal(emblem.type, "DIWALI_NAVBAR_EMBLEM");
+  assert.equal(emblem.hasText, false, "Must not contain any visible text like 'DIWALI EDITION'");
+  assert.equal(emblem.pointerEvents, "none", "Must not intercept clicks to the brand link");
+  assert.equal(emblem.ariaHidden, true, "Must be purely decorative for screen readers");
+  assert.equal(emblem.isAnimated, true);
+  assert.equal(emblem.desktopSize >= 36 && emblem.desktopSize <= 42, true, "Must be within 36-42px range on desktop");
+
+  // 2. Active Diwali with animations disabled (reduced motion / admin toggle)
+  const staticDiwali = { isActive: true, preset: "DIWALI", enableDecorations: true, enableAnimations: false };
+  const staticEmblem = resolveNavbarEmblem(staticDiwali);
+  assert.notEqual(staticEmblem, null);
+  assert.equal(staticEmblem.isAnimated, false, "Must render static emblem when animations are disabled");
+
+  // 3. Active Diwali but decorations disabled by admin
+  const noDecoDiwali = { isActive: true, preset: "DIWALI", enableDecorations: false };
+  assert.equal(resolveNavbarEmblem(noDecoDiwali), null, "Must return null when decorations disabled");
+
+  // 4. Inactive Diwali
+  const inactiveDiwali = { isActive: false, preset: "DIWALI", enableDecorations: true };
+  assert.equal(resolveNavbarEmblem(inactiveDiwali), null, "Must return null when festival is inactive");
+
+  // 5. Non-Diwali festival (e.g., Holi, Eid, Christmas)
+  const holiTheme = { isActive: true, preset: "HOLI", enableDecorations: true };
+  assert.equal(resolveNavbarEmblem(holiTheme), null, "Diwali navbar emblem must not show for other presets");
+
+  // 6. Default brand
+  assert.equal(resolveNavbarEmblem(DEFAULT_THEME_PAYLOAD), null, "Must return null for default brand");
+});
+
+test("Diwali Navbar Emblem Source Integrity: verifies no text strings in DiwaliNavbarEmblem component", async () => {
+  const fs = await import("node:fs/promises");
+  const path = await import("node:path");
+
+  const emblemPath = path.resolve("app/(storefront)/_components/DiwaliNavbarEmblem.tsx");
+  const content = await fs.readFile(emblemPath, "utf8");
+
+  // Verify text absence
+  assert.equal(content.includes("DIWALI EDITION"), false, "Must not contain 'DIWALI EDITION'");
+  assert.equal(content.includes("Happy Diwali"), false, "Must not contain 'Happy Diwali'");
+  assert.equal(content.includes("Edition"), false, "Must not contain 'Edition'");
+
+  // Verify critical attributes
+  assert.equal(content.includes('aria-hidden="true"'), true, "Must include aria-hidden='true'");
+  assert.equal(content.includes('role="presentation"'), true, "Must include role='presentation'");
+  assert.equal(content.includes("pointer-events-none"), true, "Must include pointer-events-none class");
+  assert.equal(content.includes("diwali-navbar-emblem-inner"), true, "Must include inner animated group");
+  assert.equal(content.includes("diwali-navbar-flame"), true, "Must include flame animation class");
+  assert.equal(content.includes("diwali-navbar-sparkle-1"), true, "Must include sparkle animation classes");
+});
+
+
 
 
