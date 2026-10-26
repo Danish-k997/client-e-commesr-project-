@@ -23,21 +23,6 @@ const adminNavigation = [
     description: "Customer orders & fulfillment",
   },
   {
-    label: "Custom Requests",
-    href: "/admin/custom-requests",
-    description: "Fully custom ideas",
-  },
-  {
-    label: "Manage Hero",
-    href: "/admin/hero",
-    description: "Homepage slides",
-  },
-  {
-    label: "Festival Themes",
-    href: "/admin/festival-themes",
-    description: "Festive presets & schedule",
-  },
-  {
     label: "Products",
     href: "/admin/products",
     description: "Catalog records",
@@ -46,6 +31,21 @@ const adminNavigation = [
     label: "Categories",
     href: "/admin/categories",
     description: "Catalog taxonomy",
+  },
+  {
+    label: "Custom Requests",
+    href: "/admin/custom-requests",
+    description: "Fully custom ideas",
+  },
+  {
+    label: "Festival Themes",
+    href: "/admin/festival-themes",
+    description: "Festive presets & schedule",
+  },
+  {
+    label: "Manage Hero",
+    href: "/admin/hero",
+    description: "Homepage slides",
   },
   {
     label: "Memberships",

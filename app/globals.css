@@ -1374,6 +1374,8 @@ input {
 }
 
 .admin-sidebar {
+  display: flex;
+  flex-direction: column;
   position: sticky;
   top: 74px;
   align-self: start;
@@ -1381,9 +1383,11 @@ input {
   border-right: 1px solid rgba(228, 226, 220, 0.9);
   background: rgba(255, 255, 255, 0.52);
   padding: 24px 18px;
+  overflow: hidden;
 }
 
 .admin-sidebar-header {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1412,8 +1416,16 @@ input {
 }
 
 .admin-sidebar-nav {
+  flex: 1;
+  min-height: 0;
   display: grid;
   gap: 8px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(24, 24, 27, 0.18) transparent;
 }
 
 .admin-sidebar-link {
@@ -2435,6 +2447,8 @@ input {
   }
 
   .admin-sidebar {
+    display: flex;
+    flex-direction: column;
     position: fixed;
     z-index: 60;
     top: 0;
@@ -2445,7 +2459,16 @@ input {
     background: var(--background);
     box-shadow: 24px 0 48px -36px rgba(24, 24, 27, 0.5);
     transform: translateX(-100%);
+    overflow: hidden;
     transition: transform 180ms ease;
+  }
+
+  .admin-sidebar-nav {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
   }
 
   .admin-sidebar.is-open {
